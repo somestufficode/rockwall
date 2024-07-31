@@ -1,8 +1,8 @@
-"use client"
-import { useState, useEffect } from 'react'
-import FullCalendar from '@fullcalendar/react'
-import dayGridPlugin from '@fullcalendar/daygrid'
-import interactionPlugin from '@fullcalendar/interaction'
+"use client";
+import { useState, useEffect } from 'react';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
 
 interface Shift {
   _id: string;
@@ -16,19 +16,19 @@ interface Shift {
 }
 
 export default function UserAvailability() {
-  const [name, setName] = useState('')
-  const [shifts, setShifts] = useState<Shift[]>([])
-  const [availableShifts, setAvailableShifts] = useState<string[]>([])
+  const [name, setName] = useState('');
+  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [availableShifts, setAvailableShifts] = useState<string[]>([]);
 
   useEffect(() => {
-    fetchShifts()
-  }, [])
+    fetchShifts();
+  }, []);
 
   const fetchShifts = async () => {
-    const response = await fetch('/api/shifts')
-    const data = await response.json()
-    setShifts(data.shifts)
-  }
+    const response = await fetch('/api/shifts');
+    const data = await response.json();
+    setShifts(data.shifts);
+  };
 
   const handleShiftClick = (shiftId: string) => {
     if (!name) {
@@ -42,42 +42,42 @@ export default function UserAvailability() {
     );
   };
 
-    const submitAvailability = async () => {
-        if (!name) {
-          alert("Please enter your name before submitting availability.");
-          return;
-        }
-        try {
-          const response = await fetch('/api/shifts', {  // Note the change in URL
-            method: 'PUT',  // Changed from POST to PUT
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-              name, 
-              shiftIds: availableShifts
-            }),
-          })
-          if (!response.ok) throw new Error('Failed to save availability')
-          alert('Availability submitted successfully!')
-          
-          // Update local shifts state with the new potential worker
-          setShifts(prevShifts => prevShifts.map(shift => {
-            if (availableShifts.includes(shift._id)) {
-              return {
-                ...shift,
-                potentialWorkers: [...(shift.potentialWorkers || []), name]
-              };
-            }
-            return shift;
-          }));
+  const submitAvailability = async () => {
+    if (!name) {
+      alert("Please enter your name before submitting availability.");
+      return;
+    }
+    try {
+      const response = await fetch('/api/shifts', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          name, 
+          shiftIds: availableShifts
+        }),
+      });
+      if (!response.ok) throw new Error('Failed to save availability');
+      alert('Availability submitted successfully!');
       
-          setAvailableShifts([])
-        } catch (error) {
-          console.error('Error saving availability:', error)
-          alert('Failed to submit availability. Please try again.')
+      // Update local shifts state with the new potential worker
+      setShifts(prevShifts => prevShifts.map(shift => {
+        if (availableShifts.includes(shift._id)) {
+          return {
+            ...shift,
+            potentialWorkers: [...(shift.potentialWorkers || []), name]
+          };
         }
-      }
+        return shift;
+      }));
+  
+      setAvailableShifts([]);
+    } catch (error) {
+      console.error('Error saving availability:', error);
+      alert('Failed to submit availability. Please try again.');
+    }
+  };
 
   return (
     <div>
@@ -86,19 +86,19 @@ export default function UserAvailability() {
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Enter your name"
-        className="mb-4 p-2 border rounded"
+        className="mb-4 p-2 border rounded text-black"
       />
 
-    <FullCalendar
+      <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
         events={shifts.map(shift => ({
           ...shift,
           id: shift._id,
           color: availableShifts.includes(shift._id) ? 'green' : 'blue',
-          title: shift.acceptedWorkers
-            ? `${shift.title} (Taken by ${shift.acceptedWorkers.join(', ')})`
-            : shift.title,
+        //   title: shift.acceptedWorkers && shift.acceptedWorkers.length > 0
+        //     ? `${shift.title} (Taken by ${shift.acceptedWorkers.join(', ')})`
+        //     : shift.title,
         }))}
         eventClick={(info) => {
           const shiftId = info.event.id;
@@ -116,5 +116,5 @@ export default function UserAvailability() {
         Submit Availability
       </button>
     </div>
-  )
+  );
 }

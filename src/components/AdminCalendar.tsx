@@ -1,18 +1,16 @@
-"use client"
-import { useState, useEffect } from 'react'
-import FullCalendar from '@fullcalendar/react'
-import dayGridPlugin from '@fullcalendar/daygrid'
-import interactionPlugin from '@fullcalendar/interaction'
-import timeGridPlugin from '@fullcalendar/timegrid'
-import { EventSourceInput } from '@fullcalendar/core/index.js'
+"use client";
+import { useState, useEffect } from 'react';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import { EventSourceInput } from '@fullcalendar/core/index.js';
 
 interface Shift {
   id: string;
   title: string;
   start: string;
   end: string;
-  allDay: boolean;
-  role?: string;
   acceptedWorkers?: string[];
   potentialWorkers: string[];
 }
@@ -23,96 +21,106 @@ interface Availability {
 }
 
 export default function AdminCalendar() {
-  const [shifts, setShifts] = useState<Shift[]>([])
-  const [availabilities, setAvailabilities] = useState<Availability[]>([])
-  const [showModal, setShowModal] = useState(false)
+  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [availabilities, setAvailabilities] = useState<Availability[]>([]);
+  const [showModal, setShowModal] = useState(false);
   const [newShift, setNewShift] = useState<Omit<Shift, 'id'>>({
     title: '',
     start: '',
     end: '',
-    allDay: false,
-    role: '',
     acceptedWorkers: [],
     potentialWorkers: [],
-  })
+  });
+  const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
 
   useEffect(() => {
-    fetchShifts()
-    fetchAvailabilities()
-  }, [])
+    fetchShifts();
+    fetchAvailabilities();
+  }, []);
 
   const fetchShifts = async () => {
-    const response = await fetch('/api/shifts')
-    const data = await response.json()
-    setShifts(data.shifts)
-  }
+    const response = await fetch('/api/shifts');
+    const data = await response.json();
+    setShifts(data.shifts);
+  };
 
   const fetchAvailabilities = async () => {
-    const response = await fetch('/api/availabilities')
-    const data = await response.json()
-    setAvailabilities(data.availabilities)
-  }
+    const response = await fetch('/api/availabilities');
+    const data = await response.json();
+    setAvailabilities(data.availabilities);
+  };
 
-  const handleDateClick = (arg: { date: Date, allDay: boolean }) => {
+  const handleDateClick = (arg: { date: Date }) => {
     setNewShift({
       title: '',
       start: arg.date.toISOString().slice(0, 16),
       end: new Date(arg.date.getTime() + 3600000).toISOString().slice(0, 16),
-      allDay: arg.allDay,
-      role: '',
       acceptedWorkers: [],
       potentialWorkers: [],
-    })
-    setShowModal(true)
-  }
+    });
+    setSelectedShift(null); // Clear selected shift
+    setShowModal(true);
+  };
+
+  const handleShiftClick = (shift: Shift) => {
+    setSelectedShift(shift);
+    console.log(shift)
+    setNewShift({
+      title: shift.title,
+      start: shift.start,
+      end: shift.end,
+      acceptedWorkers: [],
+      potentialWorkers: shift.potentialWorkers,
+    });
+    setShowModal(true);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewShift({
       ...newShift,
       [e.target.name]: e.target.value
-    })
-  }
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+    e.preventDefault();
     const response = await fetch('/api/shifts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newShift),
-    })
+    });
     if (response.ok) {
-      fetchShifts()
-      setShowModal(false)
+      fetchShifts();
+      setShowModal(false);
       setNewShift({
         title: '',
         start: '',
         end: '',
-        allDay: false,
-        role: '',
         acceptedWorkers: [],
         potentialWorkers: [],
-      })
+      });
+      setSelectedShift(null); // Clear selected shift after submission
     }
-  }
+  };
 
   const handleAcceptWorker = async (shiftId: string, workerName: string) => {
     const response = await fetch(`/api/shifts/${shiftId}/accept`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ workerName }),
-    })
+    });
     if (response.ok) {
-      fetchShifts()
-      fetchAvailabilities()
+      fetchShifts();
+      fetchAvailabilities();
     }
-  }
+  };
 
   const handleFinalizeCalendar = async () => {
-    const response = await fetch('/api/calendar/finalize', { method: 'POST' })
+    const response = await fetch('/api/calendar/finalize', { method: 'POST' });
     if (response.ok) {
-      fetchShifts()
+      fetchShifts();
     }
-  }
+  };
 
   return (
     <div>
@@ -126,11 +134,12 @@ export default function AdminCalendar() {
         }}
         events={shifts.map(shift => ({
           ...shift,
-          title: `${shift.title} ${shift.acceptedWorkers ? `(${shift.acceptedWorkers})` : ''}`,
+          title: shift.title
         })) as EventSourceInput}
         editable={true}
         selectable={true}
         dateClick={handleDateClick}
+        eventClick={(info) => handleShiftClick(info.event.extendedProps as Shift)}
       />
 
       <button onClick={handleFinalizeCalendar} className="mt-4 px-4 py-2 bg-green-500 text-white rounded">
@@ -146,7 +155,9 @@ export default function AdminCalendar() {
             className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" 
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-medium leading-6 text-gray-900 mb-2">Add New Shift</h3>
+            <h3 className="text-lg font-medium leading-6 text-gray-900 mb-2">
+              {selectedShift ? 'Copy Shift' : 'Add New Shift'}
+            </h3>
             <form onSubmit={handleSubmit}>
               <input
                 type="text"
@@ -170,20 +181,12 @@ export default function AdminCalendar() {
                 onChange={handleChange}
                 className="mt-2 p-2 w-full border rounded"
               />
-              <input
-                type="text"
-                name="role"
-                value={newShift.role}
-                onChange={handleChange}
-                placeholder="Role"
-                className="mt-2 p-2 w-full border rounded"
-              />
               <div className="mt-4">
                 <button
                   type="submit"
                   className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
                 >
-                  Add Shift
+                  {selectedShift ? 'Copy Shift' : 'Add Shift'}
                 </button>
                 <button
                   type="button"
@@ -197,7 +200,6 @@ export default function AdminCalendar() {
           </div>
         </div>
       )}
-
 
       <div className="mt-8">
         <h2 className="text-xl font-bold mb-4">Worker Availabilities</h2>
@@ -214,5 +216,5 @@ export default function AdminCalendar() {
         ))}
       </div>
     </div>
-  )
+  );
 }

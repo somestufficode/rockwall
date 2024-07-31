@@ -14,15 +14,13 @@ export async function POST(req: NextRequest) {
     const shiftData = await req.json();
     
     // Ensure `acceptedWorker` and `potentialWorkers` are included in the shift data
-    const { title, start, end, allDay, role, acceptedWorkers, potentialWorkers } = shiftData;
+    const { title, start, end, acceptedWorkers, potentialWorkers } = shiftData;
   
     // Create a new shift with the provided data
     const newShift = await ShiftModel.create({
       title,
       start,
       end,
-      allDay,
-      role,
       acceptedWorkers: acceptedWorkers || [], // Default to empty string if not provided
       potentialWorkers: potentialWorkers || [] // Default to empty array if not provided
     });
