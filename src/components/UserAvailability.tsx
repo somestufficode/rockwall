@@ -80,7 +80,7 @@ export default function UserAvailability() {
   };
 
   return (
-    <div>
+    <div className="p-4 md:p-6 lg:p-8">
       <input
         type="text"
         value={name}
@@ -88,6 +88,8 @@ export default function UserAvailability() {
         placeholder="Enter your name"
         className="mb-4 p-2 border rounded text-black"
       />
+
+<div className="overflow-x-auto">
 
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}
@@ -102,13 +104,14 @@ export default function UserAvailability() {
         }))}
         eventClick={(info) => {
           const shiftId = info.event.id;
-          if (info.event.extendedProps.acceptedWorkers && info.event.extendedProps.acceptedWorkers.length > 0) {
-            alert(`This shift is already taken by ${info.event.extendedProps.acceptedWorkers.join(', ')}`);
-          } else {
+        //   if (info.event.extendedProps.acceptedWorkers && info.event.extendedProps.acceptedWorkers.length > 0) {
+        //     alert(`This shift is already taken by ${info.event.extendedProps.acceptedWorkers.join(', ')}`);
+        //   } else {
             handleShiftClick(shiftId);
-          }
+        //   } 
         }}
       />
+      </div>
       <button
         onClick={submitAvailability}
         className="mt-4 px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300"
