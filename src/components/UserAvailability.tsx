@@ -94,7 +94,7 @@ export default function UserAvailability() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    <div className="p-6 md:p-8 lg:p-10 bg-gray-50 min-h-screen">
       <input
         type="text"
         value={name}
