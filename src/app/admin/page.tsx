@@ -13,7 +13,7 @@ export default function AdminPage() {
 
   const handleLogin = () => {
     // Replace 'your_secure_password' with your actual password
-    if (password === "lifetimego123!") {
+    if (password === "1909") {
       setIsAuthenticated(true);
     } else {
       alert("Incorrect password. Please try again.");

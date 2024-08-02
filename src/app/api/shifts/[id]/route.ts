@@ -16,7 +16,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     if (!shift) {
       // If the shift is not found, return a 404 error response
-      return NextResponse.json({ message: 'Shift not found' }, { status: 404 });
+      return NextResponse.json({ message: 'Shift not found get' }, { status: 404 });
     }
 
     // Return the found shift as a JSON response
@@ -44,7 +44,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   
       if (!shift) {
         // If the shift is not found, return a 404 error response
-        return NextResponse.json({ message: 'Shift not found' }, { status: 404 });
+        return NextResponse.json({ message: 'Shift not found dude'}, { status: 404 });
       }
   
       // Update shift details if provided

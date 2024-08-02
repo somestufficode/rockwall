@@ -56,42 +56,45 @@ export default function UserAvailability() {
 
   const submitAvailability = async () => {
     if (!name) {
-      alert('Please enter your name before submitting availability.');
+      alert("Please enter your name before submitting availability.");
       return;
     }
+    console.log(name)
     try {
-      const response = await fetch('/api/shifts', {
-        method: 'PUT',
+      const response = await fetch('/api/shifts', {  // Note the change in URL
+        method: 'PUT',  // Changed from POST to PUT
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name,
-          shiftIds: availableShifts,
+        body: JSON.stringify({ 
+          name, 
+          shiftIds: availableShifts
         }),
-      });
-      if (!response.ok) throw new Error('Failed to save availability');
-      alert('Availability submitted successfully!');
+      })
+      console.log(response)
+
+      if (!response.ok) throw new Error('Failed to save availability')
+      alert('Availability submitted successfully!')
 
       // Update local shifts state with the new potential worker
-      setShifts((prevShifts) =>
-        prevShifts.map((shift) => {
-          if (availableShifts.includes(shift._id)) {
-            return {
-              ...shift,
-              potentialWorkers: [...(shift.potentialWorkers || []), name],
-            };
-          }
-          return shift;
-        })
-      );
+      setShifts(prevShifts => prevShifts.map(shift => {
+        if (availableShifts.includes(shift._id)) {
+          return {
+            ...shift,
+            potentialWorkers: [...(shift.potentialWorkers || []), name]
+          };
+        }
+        return shift;
+      }));
 
-      setAvailableShifts([]);
+      setAvailableShifts([])
     } catch (error) {
-      console.error('Error saving availability:', error);
-      alert('Failed to submit availability. Please try again.');
+      console.error('Error saving availability:', error)
+      alert('Failed to submit availability. Please try again.')
     }
-  };
+  }
+  
+  
 
   return (
     <div className="p-6 md:p-8 lg:p-10 bg-gray-50 min-h-screen">
