@@ -28,15 +28,14 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-// PUT method to update the shift by adding a potential worker
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
     await connectToDatabase(); // Ensure database connection
   
     const { id } = params; // Extract the 'id' from the request params
-    const { title, start, end } = await req.json(); // Extract shift details from request body
+    const { title, start, end, acceptedWorkers, potentialWorkers } = await req.json(); // Extract shift details from request body
   
     console.log('Request Params ID:', id);
-    console.log('Updated Shift Data:', { title, start, end });
+    console.log('Updated Shift Data:', { title, start, end, acceptedWorkers, potentialWorkers });
   
     try {
       // Find the shift by ID in the database
@@ -49,13 +48,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       }
   
       // Update shift details if provided
-      if (title) shift.title = title;
-      if (start) shift.start = start;
-      if (end) shift.end = end;
+      if (title !== undefined) shift.title = title;
+      if (start !== undefined) shift.start = start;
+      if (end !== undefined) shift.end = end;
+      if (acceptedWorkers !== undefined) shift.acceptedWorkers = acceptedWorkers;
+      if (potentialWorkers !== undefined) shift.potentialWorkers = potentialWorkers;
   
       await shift.save(); // Save the updated shift document
   
-      return NextResponse.json({ message: 'Shift updated successfully' }, { status: 200 });
+      return NextResponse.json({ message: 'Shift updated successfully', shift }, { status: 200 });
     } catch (error) {
       console.error('Error updating shift:', error);
       // Return a 500 error response if there's a server error
