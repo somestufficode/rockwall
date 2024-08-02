@@ -1,11 +1,19 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
-const ShiftSchema = new mongoose.Schema({
+export interface IShift extends Document {
+  title: string;
+  start: string;
+  end: string;
+  acceptedWorkers: string[];
+  potentialWorkers: string[];
+}
+
+const ShiftSchema: Schema = new Schema({
   title: { type: String, required: true },
   start: { type: String, required: true },
   end: { type: String, required: true },
-  acceptedWorkers: [String],
-  potentialWorkers: [String]
+  acceptedWorkers: { type: [String], default: [] },
+  potentialWorkers: { type: [String], default: [] },
 });
 
-export const ShiftModel = mongoose.models.Shift || mongoose.model('Shift', ShiftSchema);
+export const ShiftModel = mongoose.models.Shift || mongoose.model<IShift>('Shift', ShiftSchema);

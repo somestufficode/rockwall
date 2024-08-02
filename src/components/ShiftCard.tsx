@@ -1,5 +1,10 @@
-// src/components/ShiftCard.tsx
 import React from 'react';
+import { format, parseISO } from 'date-fns';
+
+// Helper function to format the date and time
+const formatDate = (date: string) => {
+  return format(parseISO(date), 'M/d EEEE h:mm a');
+};
 
 interface ShiftCardProps {
   shift: {
@@ -20,8 +25,8 @@ const ShiftCard = ({ shift, onClick }: ShiftCardProps) => {
       onClick={() => onClick(shift.id)}
     >
       <h2 className="text-lg font-bold">{shift.title}</h2>
-      <p className="text-sm text-gray-600">Start: {shift.start}</p>
-      <p className="text-sm text-gray-600">End: {shift.end}</p>
+      <p className="text-sm text-gray-600">Start: {formatDate(shift.start)}</p>
+      <p className="text-sm text-gray-600">End: {formatDate(shift.end)}</p>
       <p className="text-sm text-gray-600">Potential Workers: {shift.potentialWorkers.join(', ')}</p>
     </div>
   );

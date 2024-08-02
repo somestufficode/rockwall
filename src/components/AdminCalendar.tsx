@@ -1,11 +1,11 @@
-// src/components/AdminCalendar.tsx
 "use client";
 import { useState, useEffect } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import ShiftCard from './ShiftCard';
+import listPlugin from '@fullcalendar/list';
+import { EventSourceInput, EventChangeArg } from '@fullcalendar/core';
 
 interface Shift {
   id: string;
@@ -21,19 +21,26 @@ interface Availability {
   workerName: string;
 }
 
-const AdminCalendar = () => {
+interface NewShift {
+  title: string;
+  startTime: string;
+  endTime: string;
+  acceptedWorkers: string[];
+  potentialWorkers: string[];
+}
+
+export default function AdminCalendar() {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [availabilities, setAvailabilities] = useState<Availability[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [newShift, setNewShift] = useState<Omit<Shift, 'id'>>({
+  const [newShift, setNewShift] = useState<NewShift>({
     title: '',
-    start: '',
-    end: '',
+    startTime: '',
+    endTime: '',
     acceptedWorkers: [],
     potentialWorkers: [],
   });
-  const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
-  const [view, setView] = useState<'calendar' | 'cards'>('calendar');
+  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
 
   useEffect(() => {
     fetchShifts();
@@ -52,12 +59,15 @@ const AdminCalendar = () => {
     setAvailabilities(data.availabilities);
   };
 
-  const handleCardClick = (shiftId: string) => {
-    const shift = shifts.find(s => s.id === shiftId);
-    if (shift) {
-      setSelectedShift(shift);
-      setShowModal(true);
+  const handleDateSelect = (arg: { start: Date; end: Date }) => {
+    const dates = [];
+    let currentDate = new Date(arg.start);
+    while (currentDate < arg.end) {
+      dates.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
     }
+    setSelectedDates(dates);
+    setShowModal(true);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,22 +79,37 @@ const AdminCalendar = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const shifts = selectedDates.map(date => {
+      const start = new Date(date);
+      start.setHours(parseInt(newShift.startTime.split(':')[0]), parseInt(newShift.startTime.split(':')[1]));
+      const end = new Date(date);
+      end.setHours(parseInt(newShift.endTime.split(':')[0]), parseInt(newShift.endTime.split(':')[1]));
+      return {
+        title: newShift.title,
+        start: start.toISOString(),
+        end: end.toISOString(),
+        acceptedWorkers: [],
+        potentialWorkers: [],
+      };
+    });
+
     const response = await fetch('/api/shifts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newShift),
+      body: JSON.stringify(shifts),
     });
+
     if (response.ok) {
       fetchShifts();
       setShowModal(false);
       setNewShift({
         title: '',
-        start: '',
-        end: '',
+        startTime: '',
+        endTime: '',
         acceptedWorkers: [],
         potentialWorkers: [],
       });
-      setSelectedShift(null);
+      setSelectedDates([]);
     }
   };
 
@@ -107,47 +132,62 @@ const AdminCalendar = () => {
     }
   };
 
-  const toggleView = () => {
-    setView(view === 'calendar' ? 'cards' : 'calendar');
+  const handleEventChange = async (changeInfo: EventChangeArg) => {
+    console.log('c',changeInfo)
+    const updatedShift = {
+      id: changeInfo.event._def.extendedProps._id,
+      title: changeInfo.event.title,
+      start: changeInfo.event.start?.toISOString(),
+      end: changeInfo.event.end?.toISOString(),
+    };
+
+    try {
+      const response = await fetch(`/api/shifts/${updatedShift.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedShift),
+      });
+
+      console.log('u',updatedShift)
+      console.log('r',response)
+
+      if (response.ok) {
+        fetchShifts(); // Refresh shifts after successful update
+      } else {
+        // If update fails, revert the change
+        changeInfo.revert();
+      }
+    } catch (error) {
+      console.error('Error updating shift:', error);
+      changeInfo.revert();
+    }
   };
 
   return (
     <div>
-      <button onClick={toggleView} className="mb-4 px-4 py-2 bg-blue-500 text-white rounded">
-        {view === 'calendar' ? 'Switch to Card View' : 'Switch to Calendar View'}
-      </button>
-
-      {view === 'calendar' ? (
-        <FullCalendar
-          plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}
-          initialView="timeGridWeek"
-          headerToolbar={{
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
-          }}
-          events={shifts.map(shift => ({
-            ...shift,
-            title: shift.title
-          }))}
-          editable={true}
-          selectable={true}
-          dateClick={(arg) => handleCardClick(arg.dateStr)}
-          eventClick={(info) => handleCardClick(info.event.id)}
-        />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {shifts.map(shift => (
-            <ShiftCard key={shift.id} shift={shift} onClick={handleCardClick} />
-          ))}
-        </div>
-      )}
+      <FullCalendar
+        plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin, listPlugin]}
+        initialView='dayGridMonth'
+        headerToolbar={{
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,listMonth'
+        }}
+        events={shifts.map(shift => ({
+          ...shift,
+          title: shift.title
+        })) as EventSourceInput}
+        editable={true}
+        selectable={true}
+        select={handleDateSelect}
+        eventChange={handleEventChange}
+      />
 
       <button onClick={handleFinalizeCalendar} className="mt-4 px-4 py-2 bg-green-500 text-white rounded">
         Finalize Calendar
       </button>
 
-      {showModal && selectedShift && (
+      {showModal && (
         <div 
           className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" 
           onClick={() => setShowModal(false)}
@@ -157,57 +197,58 @@ const AdminCalendar = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-medium leading-6 text-gray-900 mb-2">
-              {selectedShift ? 'Shift Details' : 'Add New Shift'}
+              Add Shifts for Selected Dates
             </h3>
-            {selectedShift ? (
-              <div>
-                <p><strong>Title:</strong> {selectedShift.title}</p>
-                <p><strong>Start:</strong> {selectedShift.start}</p>
-                <p><strong>End:</strong> {selectedShift.end}</p>
-                <p><strong>Accepted Workers:</strong> {selectedShift.acceptedWorkers?.join(', ') || 'None'}</p>
-                <p><strong>Potential Workers:</strong> {selectedShift.potentialWorkers.join(', ')}</p>
+            <form onSubmit={handleSubmit}>
+              <input
+                type="text"
+                name="title"
+                value={newShift.title}
+                onChange={handleChange}
+                placeholder="Shift Title"
+                className="mt-2 p-2 w-full border rounded"
+              />
+              <input
+                type="time"
+                name="startTime"
+                value={newShift.startTime}
+                onChange={handleChange}
+                className="mt-2 p-2 w-full border rounded"
+              />
+              <input
+                type="time"
+                name="endTime"
+                value={newShift.endTime}
+                onChange={handleChange}
+                className="mt-2 p-2 w-full border rounded"
+              />
+              <div className="mt-4 mb-4">
+                <h4 className="font-medium">Selected Dates:</h4>
+                <ul>
+                  {selectedDates.map((date, index) => (
+                    <li key={index}>{date.toDateString()}</li>
+                  ))}
+                </ul>
               </div>
-            ) : (
-              <form onSubmit={handleSubmit}>
-                <input
-                  type="text"
-                  name="title"
-                  value={newShift.title}
-                  onChange={handleChange}
-                  placeholder="Shift Title"
-                  className="mt-2 p-2 w-full border rounded"
-                />
-                <input
-                  type="datetime-local"
-                  name="start"
-                  value={newShift.start}
-                  onChange={handleChange}
-                  className="mt-2 p-2 w-full border rounded"
-                />
-                <input
-                  type="datetime-local"
-                  name="end"
-                  value={newShift.end}
-                  onChange={handleChange}
-                  className="mt-2 p-2 w-full border rounded"
-                />
-                <div className="mt-4">
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                  >
-                    {selectedShift ? 'Update Shift' : 'Add Shift'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className="ml-2 px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            )}
+              <div className="mt-4">
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                >
+                  Add Shifts
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowModal(false);
+                    setSelectedDates([]);
+                  }}
+                  className="ml-2 px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -228,6 +269,4 @@ const AdminCalendar = () => {
       </div>
     </div>
   );
-};
-
-export default AdminCalendar;
+}
