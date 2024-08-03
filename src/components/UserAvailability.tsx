@@ -9,7 +9,6 @@ import 'bootstrap/dist/css/bootstrap.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import bootstrap5Plugin from '@fullcalendar/bootstrap5';
 
-
 interface Shift {
   _id: string;
   title: string;
@@ -63,10 +62,9 @@ export default function UserAvailability() {
       alert("Please enter your name before submitting availability.");
       return;
     }
-    console.log(name)
     try {
-      const response = await fetch('/api/shifts', {  // Note the change in URL
-        method: 'PUT',  // Changed from POST to PUT
+      const response = await fetch('/api/shifts', {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -74,11 +72,11 @@ export default function UserAvailability() {
           name, 
           shiftIds: availableShifts
         }),
-      })
-              console.log(response)
+      });
+      console.log(response);
 
-      if (!response.ok) throw new Error('Failed to save availability')
-      alert('Availability submitted successfully!')
+      if (!response.ok) throw new Error('Failed to save availability');
+      alert('Availability submitted successfully!');
 
       // Update local shifts state with the new potential worker
       setShifts(prevShifts => prevShifts.map(shift => {
@@ -91,14 +89,12 @@ export default function UserAvailability() {
         return shift;
       }));
 
-      setAvailableShifts([])
+      setAvailableShifts([]);
     } catch (error) {
-      console.error('Error saving availability:', error)
-      alert('Failed to submit availability. Please try again.')
+      console.error('Error saving availability:', error);
+      alert('Failed to submit availability. Please try again.');
     }
-  }
-  
-  
+  };
 
   return (
     <div className="p-6 md:p-8 lg:p-10 bg-gray-50 min-h-screen">
@@ -107,13 +103,13 @@ export default function UserAvailability() {
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Enter your name"
-        className="mb-4 p-2 border rounded text-black"
+        className="mb-4 p-2 border rounded text-black w-full"
       />
 
       <div className="overflow-x-auto">
         <FullCalendar
-           plugins={[dayGridPlugin, interactionPlugin, listPlugin, bootstrap5Plugin]}
-            themeSystem='bootstrap5'
+          plugins={[dayGridPlugin, interactionPlugin, listPlugin, bootstrap5Plugin]}
+          themeSystem="bootstrap5"
           initialView="dayGridMonth"
           events={shifts.map((shift) => ({
             ...shift,
@@ -130,7 +126,11 @@ export default function UserAvailability() {
           }}
           eventClick={(info) => {
             const shiftId = info.event.id;
-            handleShiftClick(shiftId);
+            if (!name) {
+              alert('Please enter your name before selecting shifts.');
+            } else {
+              handleShiftClick(shiftId);
+            }
           }}
         />
       </div>
@@ -141,25 +141,25 @@ export default function UserAvailability() {
           onClick={() => setShowModal(false)}
         >
           <div
-            className="bg-white rounded-lg p-6 w-11/12 md:w-1/2 lg:w-1/3"
+            className="bg-white rounded-lg p-4 w-full max-w-md md:max-w-lg lg:max-w-xl h-auto max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-2xl font-bold mb-4">
+            <h2 className="text-xl font-bold mb-2">
               Shifts for {format(selectedDate, 'MMMM d, yyyy')}
             </h2>
             {selectedShifts.length > 0 ? (
               selectedShifts.map((shift) => (
-                <div key={shift._id} className="mb-4 p-4 border rounded-lg shadow-md">
-                  <h3 className="font-bold text-lg">{shift.title}</h3>
-                  <p>
+                <div key={shift._id} className="mb-3 p-3 border rounded-lg shadow-sm">
+                  <h3 className="font-semibold text-md">{shift.title}</h3>
+                  <p className="text-sm">
                     <strong>Time:</strong> {format(parseISO(shift.start), 'p')} -{' '}
                     {format(parseISO(shift.end), 'p')}
                   </p>
-                  <p>
+                  <p className="text-sm">
                     <strong>Accepted Workers:</strong>{' '}
                     {shift.acceptedWorkers?.join(', ') || 'None'}
                   </p>
-                  <p>
+                  <p className="text-sm">
                     <strong>Potential Workers:</strong>{' '}
                     {shift.potentialWorkers.join(', ') || 'None'}
                   </p>
@@ -169,7 +169,7 @@ export default function UserAvailability() {
               <p className="text-gray-500">No shifts for this day.</p>
             )}
             <button
-              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="mt-3 px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
               onClick={() => setShowModal(false)}
             >
               Close
