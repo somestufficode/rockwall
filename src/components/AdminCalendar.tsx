@@ -6,10 +6,9 @@ import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
 import { EventSourceInput, EventChangeArg } from "@fullcalendar/core";
-import 'bootstrap/dist/css/bootstrap.css';
-import 'bootstrap-icons/font/bootstrap-icons.css';
-import bootstrap5Plugin from '@fullcalendar/bootstrap5';
-
+import "bootstrap/dist/css/bootstrap.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
+import bootstrap5Plugin from "@fullcalendar/bootstrap5";
 
 interface Shift {
   _id: string;
@@ -102,9 +101,14 @@ export default function AdminCalendar() {
       });
 
       if (response.ok) {
-        fetchShifts(); // Refresh shifts after successful update
-        setSelectedShift(null);
-        setShowModal(false);
+        // Update the specific shift's acceptedWorkers in the state
+        setShifts((prevShifts) =>
+          prevShifts.map((shift) =>
+            shift._id === selectedShift._id
+              ? { ...shift, acceptedWorkers: workersSelection }
+              : shift
+          )
+        );
       }
     } catch (error) {
       console.error("Error finalizing workers:", error);
@@ -180,12 +184,12 @@ export default function AdminCalendar() {
     }
   };
 
-  const handleFinalizeCalendar = async () => {
-    const response = await fetch("/api/calendar/finalize", { method: "POST" });
-    if (response.ok) {
-      fetchShifts();
-    }
-  };
+//   const handleFinalizeCalendar = async () => {
+//     const response = await fetch("/api/calendar/finalize", { method: "POST" });
+//     if (response.ok) {
+//       fetchShifts();
+//     }
+//   };
 
   const handleEventChange = async (changeInfo: EventChangeArg) => {
     const updatedShift = {
@@ -217,8 +221,14 @@ export default function AdminCalendar() {
   return (
     <div>
       <FullCalendar
-        plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin, listPlugin, bootstrap5Plugin]}
-        themeSystem='bootstrap5'
+        plugins={[
+          dayGridPlugin,
+          interactionPlugin,
+          timeGridPlugin,
+          listPlugin,
+          bootstrap5Plugin,
+        ]}
+        themeSystem="bootstrap5"
         initialView="dayGridMonth"
         headerToolbar={{
           left: "prev,next today",
@@ -241,12 +251,12 @@ export default function AdminCalendar() {
         eventChange={handleEventChange}
       />
 
-      <button
+      {/* <button
         onClick={handleFinalizeCalendar}
         className="mt-4 px-4 py-2 bg-green-500 text-white rounded"
       >
         Finalize Calendar
-      </button>
+      </button> */}
 
       {showModal && (
         <div
@@ -273,7 +283,10 @@ export default function AdminCalendar() {
                     Add Shift
                   </button>
                   <button
-                    onClick={() => setModalContent("shifts")}
+                    onClick={() => {
+                      setSelectedShift(null); // Clear selected shift
+                      setModalContent("shifts");
+                    }}
                     className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
                   >
                     View Shifts
