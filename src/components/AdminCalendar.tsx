@@ -6,6 +6,10 @@ import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
 import { EventSourceInput, EventChangeArg } from "@fullcalendar/core";
+import 'bootstrap/dist/css/bootstrap.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
+import bootstrap5Plugin from '@fullcalendar/bootstrap5';
+
 
 interface Shift {
   _id: string;
@@ -213,7 +217,8 @@ export default function AdminCalendar() {
   return (
     <div>
       <FullCalendar
-        plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin, listPlugin]}
+        plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin, listPlugin, bootstrap5Plugin]}
+        themeSystem='bootstrap5'
         initialView="dayGridMonth"
         headerToolbar={{
           left: "prev,next today",

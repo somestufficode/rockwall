@@ -5,6 +5,10 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import { parseISO, format } from "date-fns";
+import 'bootstrap/dist/css/bootstrap.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
+import bootstrap5Plugin from '@fullcalendar/bootstrap5';
+
 
 interface Shift {
   _id: string;
@@ -42,9 +46,10 @@ export default function FinalizedCalendar() {
   };
 
   return (
-    <div className="p-6 md:p-8 lg:p-10 min-h-screen">
+    <div className="p-6 md:p-8 lg:p-10 bg-gray-50 min-h-screen">
       <FullCalendar
-        plugins={[dayGridPlugin, interactionPlugin, listPlugin]}
+        plugins={[dayGridPlugin, interactionPlugin, listPlugin, bootstrap5Plugin]}
+        themeSystem='bootstrap5'        
         initialView="dayGridMonth"
         headerToolbar={{
           left: "prev,next today",

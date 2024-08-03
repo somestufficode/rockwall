@@ -5,6 +5,10 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import { format, isSameDay, parseISO } from 'date-fns';
+import 'bootstrap/dist/css/bootstrap.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
+import bootstrap5Plugin from '@fullcalendar/bootstrap5';
+
 
 interface Shift {
   _id: string;
@@ -71,7 +75,7 @@ export default function UserAvailability() {
           shiftIds: availableShifts
         }),
       })
-      console.log(response)
+              console.log(response)
 
       if (!response.ok) throw new Error('Failed to save availability')
       alert('Availability submitted successfully!')
@@ -108,7 +112,8 @@ export default function UserAvailability() {
 
       <div className="overflow-x-auto">
         <FullCalendar
-          plugins={[dayGridPlugin, interactionPlugin, listPlugin]}
+           plugins={[dayGridPlugin, interactionPlugin, listPlugin, bootstrap5Plugin]}
+            themeSystem='bootstrap5'
           initialView="dayGridMonth"
           events={shifts.map((shift) => ({
             ...shift,
