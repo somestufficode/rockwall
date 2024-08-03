@@ -42,7 +42,7 @@ export default function FinalizedCalendar() {
   };
 
   return (
-    <div className="p-6 md:p-8 lg:p-10 bg-gray-50 min-h-screen">
+    <div className="p-6 md:p-8 lg:p-10 min-h-screen">
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin, listPlugin]}
         initialView="dayGridMonth"
