@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: 'Shifts created', shifts: createdShifts }, { status: 201 });
     } catch (error) {
         console.error('Error creating shifts:', error);
-        return NextResponse.json({ message: 'Error creating shifts', error: error.message }, { status: 500 });
+        return NextResponse.json({ message: 'Error creating shifts'}, { status: 500 });
     }
 }
 
