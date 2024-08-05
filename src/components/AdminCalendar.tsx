@@ -36,11 +36,9 @@ export default function AdminCalendar() {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [availabilities, setAvailabilities] = useState<Availability[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [modalContent, setModalContent] = useState<"options" | "add" | "shifts">(
-    "options"
-  );
+  const [modalContent, setModalContent] = useState<"options" | "add" | "shifts">("options");
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [newShift, setNewShift] = useState<NewShift>({
     title: "",
     startTime: "",
@@ -48,7 +46,6 @@ export default function AdminCalendar() {
     acceptedWorkers: [],
     potentialWorkers: [],
   });
-  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [workersSelection, setWorkersSelection] = useState<string[]>([]);
 
   useEffect(() => {
@@ -76,7 +73,6 @@ export default function AdminCalendar() {
       currentDate.setDate(currentDate.getDate() + 1);
     }
     setSelectedDates(dates);
-    setSelectedDate(dates[0]);
     setModalContent("options");
     setShowModal(true);
   };
@@ -101,7 +97,6 @@ export default function AdminCalendar() {
       });
 
       if (response.ok) {
-        // Update the specific shift's acceptedWorkers in the state
         setShifts((prevShifts) =>
           prevShifts.map((shift) =>
             shift._id === selectedShift._id
@@ -184,13 +179,6 @@ export default function AdminCalendar() {
     }
   };
 
-//   const handleFinalizeCalendar = async () => {
-//     const response = await fetch("/api/calendar/finalize", { method: "POST" });
-//     if (response.ok) {
-//       fetchShifts();
-//     }
-//   };
-
   const handleEventChange = async (changeInfo: EventChangeArg) => {
     const updatedShift = {
       id: changeInfo.event._def.extendedProps._id,
@@ -207,9 +195,8 @@ export default function AdminCalendar() {
       });
 
       if (response.ok) {
-        fetchShifts(); // Refresh shifts after successful update
+        fetchShifts();
       } else {
-        // If update fails, revert the change
         changeInfo.revert();
       }
     } catch (error) {
@@ -251,13 +238,6 @@ export default function AdminCalendar() {
         eventChange={handleEventChange}
       />
 
-      {/* <button
-        onClick={handleFinalizeCalendar}
-        className="mt-4 px-4 py-2 bg-green-500 text-white rounded"
-      >
-        Finalize Calendar
-      </button> */}
-
       {showModal && (
         <div
           className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center"
@@ -272,8 +252,7 @@ export default function AdminCalendar() {
             {modalContent === "options" && (
               <div>
                 <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
-                  Selected Date:{" "}
-                  {selectedDate ? selectedDate.toDateString() : ""}
+                  Selected Dates: {selectedDates.map(date => date.toDateString()).join(', ')}
                 </h3>
                 <div className="flex justify-between">
                   <button
@@ -284,7 +263,7 @@ export default function AdminCalendar() {
                   </button>
                   <button
                     onClick={() => {
-                      setSelectedShift(null); // Clear selected shift
+                      setSelectedShift(null);
                       setModalContent("shifts");
                     }}
                     className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
@@ -306,8 +285,7 @@ export default function AdminCalendar() {
             {modalContent === "add" && (
               <div>
                 <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
-                  Add Shifts for:{" "}
-                  {selectedDate ? selectedDate.toDateString() : ""}
+                  Add Shifts for: {selectedDates.map(date => date.toDateString()).join(', ')}
                 </h3>
                 <form onSubmit={handleSubmit}>
                   <input
@@ -354,14 +332,15 @@ export default function AdminCalendar() {
             {modalContent === "shifts" && (
               <div>
                 <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
-                  Shifts on: {selectedDate ? selectedDate.toDateString() : ""}
+                  Shifts on: {selectedDates.length > 0 ? selectedDates[0].toDateString() : ""}
                 </h3>
                 <ul className="mb-4">
                   {shifts
                     .filter(
                       (shift) =>
-                        new Date(shift.start).toDateString() ===
-                        (selectedDate ? selectedDate.toDateString() : "")
+                        selectedDates.some(date => 
+                          new Date(shift.start).toDateString() === date.toDateString()
+                        )
                     )
                     .map((shift) => (
                       <li

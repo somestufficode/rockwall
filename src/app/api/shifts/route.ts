@@ -11,22 +11,34 @@ export async function GET() {
 export async function POST(req: NextRequest) {
     await connectToDatabase();
     
-    const shiftData = await req.json();
-    
-    // Ensure `acceptedWorker` and `potentialWorkers` are included in the shift data
-    const { title, start, end, acceptedWorkers, potentialWorkers } = shiftData;
-  
-    // Create a new shift with the provided data
-    const newShift = await ShiftModel.create({
-      title,
-      start,
-      end,
-      acceptedWorkers: acceptedWorkers || [], // Default to empty string if not provided
-      potentialWorkers: potentialWorkers || [] // Default to empty array if not provided
-    });
-  
-    return NextResponse.json({ message: 'Shift created', shift: newShift }, { status: 201 });
-  }
+    const shiftsData = await req.json();
+    console.log('Received shifts data:', shiftsData);
+
+    if (!Array.isArray(shiftsData)) {
+        return NextResponse.json({ message: 'Invalid input: expected an array of shifts' }, { status: 400 });
+    }
+
+    try {
+        const createdShifts = await Promise.all(shiftsData.map(async (shiftData) => {
+            const { title, start, end, acceptedWorkers, potentialWorkers } = shiftData;
+            
+            return await ShiftModel.create({
+                title,
+                start,
+                end,
+                acceptedWorkers: acceptedWorkers || [],
+                potentialWorkers: potentialWorkers || []
+            });
+        }));
+
+        return NextResponse.json({ message: 'Shifts created', shifts: createdShifts }, { status: 201 });
+    } catch (error) {
+        console.error('Error creating shifts:', error);
+        return NextResponse.json({ message: 'Error creating shifts', error: error.message }, { status: 500 });
+    }
+}
+
+// ... PUT handler remains the same
 
 // New route for handling availability submissions
 export async function PUT(req: NextRequest) {
