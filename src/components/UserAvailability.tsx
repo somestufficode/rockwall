@@ -1,5 +1,7 @@
-"use client";
+'use client';
+
 import { useState, useEffect } from 'react';
+import Checkbox from '@mui/material/Checkbox';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -8,6 +10,7 @@ import { format, isSameDay, parseISO } from 'date-fns';
 import 'bootstrap/dist/css/bootstrap.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import bootstrap5Plugin from '@fullcalendar/bootstrap5';
+import ReturnHomeButton from './ReturnHomeButton';
 
 interface Shift {
   _id: string;
@@ -20,22 +23,66 @@ interface Shift {
   potentialWorkers: string[];
 }
 
-export default function UserAvailability() {
-  const [name, setName] = useState('');
+interface UserAvailabilityProps {
+  name: string;
+}
+
+export default function UserAvailability({ name }: UserAvailabilityProps) {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [selectedShifts, setSelectedShifts] = useState<Shift[]>([]);
   const [availableShifts, setAvailableShifts] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [initialView, setInitialView] = useState<string>('dayGridMonth');
+  const [headerToolbar, setHeaderToolbar] = useState<any>({
+    left: 'prev,next today',
+    center: 'title',
+    right: 'dayGridMonth,listMonth',
+  });
 
   useEffect(() => {
     fetchShifts();
+
+    // Determine initial view and toolbar based on window width
+    const updateViewAndToolbar = () => {
+      if (window.innerWidth < 768) {
+        setInitialView('listMonth');
+        setHeaderToolbar({
+          left: 'prev,next',
+          center: 'title',
+          right: 'listMonth',
+        });
+      } else {
+        setInitialView('dayGridMonth');
+        setHeaderToolbar({
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,listMonth',
+        });
+      }
+    };
+
+    // Set initial view and toolbar on component mount
+    updateViewAndToolbar();
+
+    // Listen for window resize events to adjust view and toolbar dynamically
+    window.addEventListener('resize', updateViewAndToolbar);
+
+    return () => {
+      window.removeEventListener('resize', updateViewAndToolbar);
+    };
   }, []);
 
   const fetchShifts = async () => {
     const response = await fetch('/api/shifts');
     const data = await response.json();
     setShifts(data.shifts);
+
+    // Set initial available shifts based on the current user's potentialWorker status
+    const initialAvailableShifts = data.shifts
+      .filter((shift: Shift) => shift.potentialWorkers.includes(name))
+      .map((shift: Shift) => shift._id);
+    setAvailableShifts(initialAvailableShifts);
   };
 
   const handleDateClick = (date: Date) => {
@@ -47,19 +94,15 @@ export default function UserAvailability() {
     setShowModal(true);
   };
 
-  const handleShiftClick = (shiftId: string) => {
-    if (!name) {
-      alert('Please enter your name before selecting shifts.');
-      return;
-    }
+  const handleCheckboxChange = (shiftId: string, isChecked: boolean) => {
     setAvailableShifts((prev) =>
-      prev.includes(shiftId) ? prev.filter((id) => id !== shiftId) : [...prev, shiftId]
+      isChecked ? [...prev, shiftId] : prev.filter((id) => id !== shiftId)
     );
   };
 
   const submitAvailability = async () => {
     if (!name) {
-      alert("Please enter your name before submitting availability.");
+      alert('Name is missing.');
       return;
     }
     try {
@@ -73,65 +116,70 @@ export default function UserAvailability() {
           shiftIds: availableShifts
         }),
       });
-      console.log(response);
 
       if (!response.ok) throw new Error('Failed to save availability');
       alert('Availability submitted successfully!');
 
-      // Update local shifts state with the new potential worker
-      setShifts(prevShifts => prevShifts.map(shift => {
+      setShifts((prevShifts) => prevShifts.map((shift) => {
         if (availableShifts.includes(shift._id)) {
           return {
             ...shift,
-            potentialWorkers: [...(shift.potentialWorkers || []), name]
+            potentialWorkers: [...shift.potentialWorkers, name].filter((value, index, self) => self.indexOf(value) === index), // Ensure uniqueness with array
+          };
+        } else {
+          return {
+            ...shift,
+            potentialWorkers: shift.potentialWorkers.filter(worker => worker !== name),
           };
         }
-        return shift;
       }));
 
-      setAvailableShifts([]);
     } catch (error) {
       console.error('Error saving availability:', error);
       alert('Failed to submit availability. Please try again.');
     }
   };
 
+  const renderEventContent = (eventInfo: any) => {
+    const isChecked = availableShifts.includes(eventInfo.event.id);
+
+    return (
+      <div className="fc-event-custom-content">
+        <Checkbox
+          checked={isChecked}
+          onChange={(e) => handleCheckboxChange(eventInfo.event.id, e.target.checked)}
+          inputProps={{ 'aria-label': 'Checkbox for availability' }}
+          color="primary"
+        />
+        <span>{eventInfo.event.title}</span>
+      </div>
+    );
+  };
+
   return (
     <div className="p-6 md:p-8 lg:p-10 bg-gray-50 min-h-screen">
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Enter your name"
-        className="mb-4 p-2 border rounded text-black w-full"
-      />
-
-      <div className="overflow-x-auto">
+      <div className="mb-4 flex justify-between items-center">
+        <h1 className="text-xl font-bold">Welcome, {name}</h1>
+        <ReturnHomeButton />
+      </div>
+      <div className="overflow-x-auto mb-4">
         <FullCalendar
           plugins={[dayGridPlugin, interactionPlugin, listPlugin, bootstrap5Plugin]}
           themeSystem="bootstrap5"
-          initialView="dayGridMonth"
+          initialView={initialView}
           events={shifts.map((shift) => ({
             ...shift,
             id: shift._id,
             color: availableShifts.includes(shift._id) ? 'green' : 'blue',
           }))}
-          headerToolbar={{
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,listMonth',
-          }}
+          headerToolbar={headerToolbar}
           dateClick={(info) => {
             handleDateClick(info.date);
           }}
-          eventClick={(info) => {
-            const shiftId = info.event.id;
-            if (!name) {
-              alert('Please enter your name before selecting shifts.');
-            } else {
-              handleShiftClick(shiftId);
-            }
-          }}
+          eventContent={renderEventContent} // Use custom event rendering
+          height="auto" // Adjust calendar height
+          contentHeight="auto" // Ensure it expands to fit content
+          aspectRatio={1.5} // Adjust aspect ratio for better layout
         />
       </div>
 

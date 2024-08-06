@@ -1,14 +1,16 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import { parseISO, format } from "date-fns";
-import 'bootstrap/dist/css/bootstrap.css';
-import 'bootstrap-icons/font/bootstrap-icons.css';
-import bootstrap5Plugin from '@fullcalendar/bootstrap5';
-
+import "bootstrap/dist/css/bootstrap.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
+import bootstrap5Plugin from "@fullcalendar/bootstrap5";
+import ReturnHomeButton from "./ReturnHomeButton";
+import ViewSwitcher from "./ViewSwitcher";
 
 interface Shift {
   _id: string;
@@ -20,7 +22,11 @@ interface Shift {
   potentialWorkers: string[];
 }
 
-export default function FinalizedCalendar() {
+interface FinalizedCalendarProps {
+  name: string;
+}
+
+export default function FinalizedCalendar({ name }: FinalizedCalendarProps) {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
 
@@ -47,9 +53,13 @@ export default function FinalizedCalendar() {
 
   return (
     <div className="p-6 md:p-8 lg:p-10 bg-gray-50 min-h-screen">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-xl font-bold">Welcome, {name}</h1>
+        {/* <ViewSwitcher/> */}
+      </div>
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin, listPlugin, bootstrap5Plugin]}
-        themeSystem='bootstrap5'        
+        themeSystem="bootstrap5"
         initialView="dayGridMonth"
         headerToolbar={{
           left: "prev,next today",
@@ -111,6 +121,20 @@ export default function FinalizedCalendar() {
                 </ul>
               ) : (
                 <p className="text-gray-500 mt-2">No accepted workers.</p>
+              )}
+            </div>
+            <div className="mt-4">
+              <h3 className="font-medium text-lg">Potential Workers:</h3>
+              {selectedShift.potentialWorkers.length > 0 ? (
+                <ul className="list-disc list-inside mt-2">
+                  {selectedShift.potentialWorkers.map((worker, index) => (
+                    <li key={index} className="text-gray-700 text-lg font-semibold">
+                      {worker}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500 mt-2">No potential workers.</p>
               )}
             </div>
             <div className="mt-6 flex justify-end">

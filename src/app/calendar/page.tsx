@@ -4,7 +4,7 @@ import FinalizedCalendar from '@/components/FinalizedCalendar'
 const page = () => {
   return (
     <div>
-    <FinalizedCalendar/>
+    {/* <FinalizedCalendar/> */}
     </div>
   )
 }
