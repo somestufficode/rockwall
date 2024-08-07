@@ -1,16 +1,15 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
-import { parseISO, format } from "date-fns";
+import { parseISO, format, addDays, startOfMonth } from "date-fns";
 import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import bootstrap5Plugin from "@fullcalendar/bootstrap5";
 import ReturnHomeButton from "./ReturnHomeButton";
-import ViewSwitcher from "./ViewSwitcher";
 
 interface Shift {
   _id: string;
@@ -29,18 +28,22 @@ interface FinalizedCalendarProps {
 export default function FinalizedCalendar({ name }: FinalizedCalendarProps) {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchShifts();
   }, []);
 
   const fetchShifts = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch("/api/shifts");
       const data = await response.json();
       setShifts(data.shifts);
     } catch (error) {
       console.error("Error fetching shifts:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -51,11 +54,23 @@ export default function FinalizedCalendar({ name }: FinalizedCalendarProps) {
     }
   };
 
+  const generatePlaceholderEvents = (daysInMonth: number) => {
+    const start = startOfMonth(new Date());
+    return Array.from({ length: daysInMonth }, (_, index) => ({
+      id: `placeholder-${index}`,
+      title: 'Loading...',
+      start: addDays(start, index),
+      end: addDays(start, index),
+      allDay: true,
+      extendedProps: { isPlaceholder: true },
+    }));
+  };
+
   return (
     <div className="p-6 md:p-8 lg:p-10 bg-gray-50 min-h-screen">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold">Welcome, {name}</h1>
-        {/* <ViewSwitcher/> */}
+        <ReturnHomeButton />
       </div>
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin, listPlugin, bootstrap5Plugin]}
@@ -66,7 +81,7 @@ export default function FinalizedCalendar({ name }: FinalizedCalendarProps) {
           center: "title",
           right: "dayGridMonth,listMonth",
         }}
-        events={shifts.map((shift) => ({
+        events={isLoading ? generatePlaceholderEvents(31) : shifts.map((shift) => ({
           id: shift._id,
           title: `${shift.title} ${format(parseISO(shift.start), "p")}`,
           start: shift.start,
@@ -81,14 +96,24 @@ export default function FinalizedCalendar({ name }: FinalizedCalendarProps) {
         height="auto"
         contentHeight="auto"
         aspectRatio={1.35}
-        eventContent={({ event }) => (
-          <div className="p-2 bg-white rounded-lg shadow-md">
-            <p className="font-bold text-sm">{event.title}</p>
-            <p className="text-gray-600 text-sm mt-1">
-              {event.extendedProps.acceptedWorkers.join(", ") || "No workers"}
-            </p>
-          </div>
-        )}
+        eventContent={({ event }) => {
+          if (event.extendedProps.isPlaceholder) {
+            return (
+              <div className="p-2 bg-white rounded-lg ">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            );
+          }
+          return (
+            <div className="p-2 bg-white rounded-lg shadow-md">
+              <p className="font-bold text-sm">{event.title}</p>
+              <p className="text-gray-600 text-sm mt-1">
+                {event.extendedProps.acceptedWorkers?.join(", ") || "No workers"}
+              </p>
+            </div>
+          );
+        }}
       />
 
       {selectedShift && (

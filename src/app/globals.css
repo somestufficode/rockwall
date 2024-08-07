@@ -2,33 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Define colors for light and dark modes */
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  --foreground-rgb: 0, 0, 0; /* Default text color for light mode */
+  --background-start-rgb: 245, 245, 245; /* Light gray */
+  --background-end-rgb: 255, 255, 255; /* White */
 }
 
+/* Adjust colors for dark mode */
 @media (prefers-color-scheme: dark) {
   :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+    --foreground-rgb: 255, 255, 255; /* Default text color for dark mode */
+    --background-start-rgb: 18, 18, 18; /* Dark gray */
+    --background-end-rgb: 48, 48, 48; /* Darker gray */
   }
 }
 
+/* Apply text and background colors */
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background: rgb(var(--background-start-rgb));
 }
 
+/* Utility classes for text balancing */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
 }
-
