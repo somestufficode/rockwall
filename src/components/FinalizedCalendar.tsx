@@ -29,10 +29,20 @@ export default function FinalizedCalendar({ name }: FinalizedCalendarProps) {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     fetchShifts();
+    handleResize();
+    // Add event listener to update isMobile on window resize
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  const handleResize = () => {
+    setIsMobile(window.innerWidth <= 768); // Adjust the breakpoint as needed
+  };
+
 
   const fetchShifts = async () => {
     setIsLoading(true);
@@ -75,11 +85,11 @@ export default function FinalizedCalendar({ name }: FinalizedCalendarProps) {
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin, listPlugin, bootstrap5Plugin]}
         themeSystem="bootstrap5"
-        initialView="dayGridMonth"
+        initialView="listWeek"
         headerToolbar={{
-          left: "prev,next today",
+          left: isMobile ? "prev,next" : "prev,next today",
           center: "title",
-          right: "dayGridMonth,listMonth",
+          right: isMobile ? "" : "dayGridMonth,listWeek",
         }}
         events={isLoading ? generatePlaceholderEvents(31) : shifts.map((shift) => ({
           id: shift._id,

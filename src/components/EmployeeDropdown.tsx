@@ -6,20 +6,24 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { useRouter } from 'next/navigation';
+import { Circles, Bars } from 'react-loading-icons'; // Importing a specific icon
 
 export default function EmployeeDropdown() {
   const [selectedEmployee, setSelectedEmployee] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
   const router = useRouter();
 
-  const employees = ['Vincent', 'Derek', 'Don', 'Joe', 'Matt', 'Brendan', 'Andrianna', 'Eleni', 'Randy'];
+  const employees = ['Vincent', 'Derek', 'Don', 'Joseph Valentino', 'Greg Levet', 'Matt', 'Brendan', 'Andrianna Selearis', 'Eleni', 'Randy Leidl'];
 
   const handleChange = (event: SelectChangeEvent) => {
     const employeeName = event.target.value;
     setSelectedEmployee(employeeName);
 
-    // Navigate to the employee's page
     if (employeeName) {
-      router.push(`/employees/${employeeName}`);
+      setLoading(true); // Show loading icon
+      setTimeout(() => {
+        router.push(`/employees/${employeeName}`);
+      }, 1500);
     }
   };
 
@@ -33,6 +37,7 @@ export default function EmployeeDropdown() {
           value={selectedEmployee}
           label="Select Employee"
           onChange={handleChange}
+          disabled={loading} // Disable selection while loading
         >
           {employees.map((employee) => (
             <MenuItem key={employee} value={employee}>
@@ -41,6 +46,11 @@ export default function EmployeeDropdown() {
           ))}
         </Select>
       </FormControl>
+      {loading && (
+        <Box mt={2} display="flex" justifyContent="center" alignItems="center">
+          <Bars stroke="currentColor" strokeWidth={2} width={50} height={50} />
+        </Box>
+      )}
     </Box>
   );
 }

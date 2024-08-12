@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import EmployeeDropdown from '@/components/EmployeeDropdown';
 import { Button } from '@mui/material';
+import LoadingIcons from 'react-loading-icons';
 
 export default function Home() {
 

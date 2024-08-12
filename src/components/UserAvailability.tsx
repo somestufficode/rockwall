@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from "react";
 import Checkbox from "@mui/material/Checkbox";
@@ -34,46 +34,19 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
   const [availableShifts, setAvailableShifts] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [initialView, setInitialView] = useState<string>("dayGridMonth");
-  const [headerToolbar, setHeaderToolbar] = useState<any>({
-    left: "prev,next today",
-    center: "title",
-    right: "dayGridMonth,listMonth",
-  });
   const [isLoading, setIsLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     fetchShifts();
-
-    // Determine initial view and toolbar based on window width
-    const updateViewAndToolbar = () => {
-      if (window.innerWidth < 768) {
-        setInitialView("listMonth");
-        setHeaderToolbar({
-          left: "prev,next",
-          center: "title",
-          right: "listMonth",
-        });
-      } else {
-        setInitialView("dayGridMonth");
-        setHeaderToolbar({
-          left: "prev,next today",
-          center: "title",
-          right: "dayGridMonth,listMonth",
-        });
-      }
-    };
-
-    // Set initial view and toolbar on component mount
-    updateViewAndToolbar();
-
-    // Listen for window resize events to adjust view and toolbar dynamically
-    window.addEventListener("resize", updateViewAndToolbar);
-
-    return () => {
-      window.removeEventListener("resize", updateViewAndToolbar);
-    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const handleResize = () => {
+    setIsMobile(window.innerWidth <= 768);
+  };
 
   const fetchShifts = async () => {
     setIsLoading(true);
@@ -178,7 +151,7 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
     }
 
     return (
-      <div className="fc-event-custom-content flex items-center">
+      <div>
         <Checkbox
           checked={isChecked}
           onChange={(e) =>
@@ -200,14 +173,14 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
       </div>
       <div className="mb-4">
         <FullCalendar
-          plugins={[
-            dayGridPlugin,
-            interactionPlugin,
-            listPlugin,
-            bootstrap5Plugin,
-          ]}
+          plugins={[dayGridPlugin, interactionPlugin, listPlugin, bootstrap5Plugin]}
           themeSystem="bootstrap5"
-          initialView={initialView}
+          initialView="listMonth"
+          headerToolbar={{
+            left: isMobile ? "prev,next" : "prev,next today",
+            center: "title",
+            right: isMobile ? "" : "dayGridMonth,listMonth",
+          }}
           events={
             isLoading
               ? generatePlaceholderEvents(31)
@@ -216,7 +189,6 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
                   id: shift._id,
                 }))
           }
-          headerToolbar={headerToolbar}
           dateClick={(info) => {
             handleDateClick(info.date);
           }}

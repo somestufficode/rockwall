@@ -20,8 +20,8 @@
 
 /* Apply text and background colors */
 body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-start-rgb));
+  color: rgb(0, 0, 0); /* Default text color */
+  background: rgb(255, 255, 255); /* Always use a white background */
 }
 
 /* Utility classes for text balancing */
