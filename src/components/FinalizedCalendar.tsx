@@ -91,6 +91,7 @@ export default function FinalizedCalendar({ name }: FinalizedCalendarProps) {
           center: "title",
           right: isMobile ? "" : "dayGridMonth,listWeek",
         }}
+        titleFormat={isMobile ? { month: 'short', day: 'numeric' } : { month: 'long', year: 'numeric', day: 'numeric' }}
         events={isLoading ? generatePlaceholderEvents(31) : shifts.map((shift) => ({
           id: shift._id,
           title: `${shift.title} ${format(parseISO(shift.start), "p")}`,
