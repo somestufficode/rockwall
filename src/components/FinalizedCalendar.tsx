@@ -128,62 +128,74 @@ export default function FinalizedCalendar({ name }: FinalizedCalendarProps) {
       />
 
       {selectedShift && (
-        <div
-          className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50"
-          onClick={() => setSelectedShift(null)}
-        >
           <div
-            className="bg-white rounded-lg shadow-lg w-11/12 max-w-lg p-6"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 sm:p-0"
+            onClick={() => setSelectedShift(null)}
           >
-            <h2 className="text-2xl font-semibold mb-4">{selectedShift.title}</h2>
-            <p className="text-gray-700">
-              <strong>Date:</strong>{" "}
-              {format(parseISO(selectedShift.start), "MMMM d, yyyy")}
-            </p>
-            <p className="text-gray-700">
-              <strong>Time:</strong>{" "}
-              {format(parseISO(selectedShift.start), "p")}
-            </p>
-            <div className="mt-4">
-              <h3 className="font-medium text-lg">Accepted Workers:</h3>
-              {selectedShift.acceptedWorkers.length > 0 ? (
-                <ul className="list-disc list-inside mt-2">
-                  {selectedShift.acceptedWorkers.map((worker, index) => (
-                    <li key={index} className="text-gray-700 text-lg font-semibold">
-                      {worker}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-500 mt-2">No accepted workers.</p>
-              )}
-            </div>
-            <div className="mt-4">
-              <h3 className="font-medium text-lg">Potential Workers:</h3>
-              {selectedShift.potentialWorkers.length > 0 ? (
-                <ul className="list-disc list-inside mt-2">
-                  {selectedShift.potentialWorkers.map((worker, index) => (
-                    <li key={index} className="text-gray-700 text-lg font-semibold">
-                      {worker}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-500 mt-2">No potential workers.</p>
-              )}
-            </div>
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => setSelectedShift(null)}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition duration-200"
-              >
-                Close
-              </button>
+            <div
+              className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden transform transition-all"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+                <h2 className="text-2xl font-bold text-white">{selectedShift.title}</h2>
+              </div>
+              <div className="p-6">
+                <div className="mb-4">
+                  <p className="text-gray-700">
+                    <span className="font-semibold">Date:</span>{" "}
+                    {format(parseISO(selectedShift.start), "MMMM d, yyyy")}
+                  </p>
+                  <p className="text-gray-700">
+                    <span className="font-semibold">Time:</span>{" "}
+                    {format(parseISO(selectedShift.start), "p")}
+                  </p>
+                </div>
+                <div className="mb-4">
+                  <h3 className="font-semibold text-lg text-gray-800 mb-2">Accepted Workers</h3>
+                  {selectedShift.acceptedWorkers.length > 0 ? (
+                    <ul className="space-y-1">
+                      {selectedShift.acceptedWorkers.map((worker, index) => (
+                        <li key={index} className="flex items-center text-gray-700">
+                          <svg className="h-4 w-4 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          {worker}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500 italic">No accepted workers yet.</p>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg text-gray-800 mb-2">Potential Workers</h3>
+                  {selectedShift.potentialWorkers.length > 0 ? (
+                    <ul className="space-y-1">
+                      {selectedShift.potentialWorkers.map((worker, index) => (
+                        <li key={index} className="flex items-center text-gray-700">
+                          <svg className="h-4 w-4 text-yellow-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {worker}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500 italic">No potential workers at the moment.</p>
+                  )}
+                </div>
+              </div>
+              <div className="bg-gray-50 px-6 py-4 flex justify-end">
+                <button
+                  onClick={() => setSelectedShift(null)}
+                  className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 ease-in-out"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }

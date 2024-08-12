@@ -9,6 +9,7 @@ import { EventSourceInput, EventChangeArg } from "@fullcalendar/core";
 import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import bootstrap5Plugin from "@fullcalendar/bootstrap5";
+import ReturnHomeButton from "./ReturnHomeButton";
 
 interface Shift {
   _id: string;
@@ -207,6 +208,11 @@ export default function AdminCalendar() {
 
   return (
     <div>
+{/*       
+      <div className="flex justify-between items-center mb-4">
+        <ReturnHomeButton />
+      </div> */}
+
       <FullCalendar
         plugins={[
           dayGridPlugin,
@@ -219,8 +225,7 @@ export default function AdminCalendar() {
         initialView="dayGridMonth"
         headerToolbar={{
           left: "prev,next today",
-          center: "title",
-          right: "dayGridMonth,listMonth",
+          right: "title",
         }}
         events={shifts.map((shift) => ({
           ...shift,

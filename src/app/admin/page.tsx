@@ -1,11 +1,13 @@
 'use client';
-import AdminCalendar from '@/components/AdminCalendar'
 import { useState } from 'react';
+import AdminCalendar from '@/components/AdminCalendar';
+import FinalizedCalendar from '@/components/FinalizedCalendar';
+import ReturnHomeButton from '@/components/ReturnHomeButton';
 
 export default function AdminPage() {
-
   const [password, setPassword] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showFinalizedCalendar, setShowFinalizedCalendar] = useState(false);
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value);
@@ -18,6 +20,10 @@ export default function AdminPage() {
     } else {
       alert("Incorrect password. Please try again.");
     }
+  };
+
+  const toggleCalendarView = () => {
+    setShowFinalizedCalendar((prev) => !prev);
   };
 
   if (!isAuthenticated) {
@@ -42,9 +48,18 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Admin Calendar</h1>
-      <AdminCalendar />
+    <div className="p-8 bg-white min-h-screen">
+      <div className="flex justify-between items-center mb-4">
+        <ReturnHomeButton />
+        <button
+          onClick={toggleCalendarView}
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          {showFinalizedCalendar ? 'View Admin Calendar' : 'View Finalized Calendar'}
+        </button>
+      </div>
+
+      {showFinalizedCalendar ? <FinalizedCalendar name="Admin" /> : <AdminCalendar />}
     </div>
-  )
+  );
 }

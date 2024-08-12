@@ -36,6 +36,9 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
+  const [currentShiftIndex, setCurrentShiftIndex] = useState(0);
+
 
   useEffect(() => {
     fetchShifts();
@@ -72,7 +75,16 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
     );
     setSelectedShifts(shiftsForDate);
     setSelectedDate(date);
+    setCurrentShiftIndex(0);
     setShowModal(true);
+  };
+
+  const handleShiftClick = (shiftId: string) => {
+    const shift = shifts.find((s) => s._id === shiftId);
+    if (shift) {
+      setSelectedShift(shift);
+      setShowModal(true);
+    }
   };
 
   const handleCheckboxChange = (shiftId: string, isChecked: boolean) => {
@@ -108,7 +120,7 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
               ...shift,
               potentialWorkers: [...shift.potentialWorkers, name].filter(
                 (value, index, self) => self.indexOf(value) === index
-              ), // Ensure uniqueness with array
+              ),
             };
           } else {
             return {
@@ -151,16 +163,22 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
     }
 
     return (
-      <div>
+      <div className="flex items-center">
         <Checkbox
           checked={isChecked}
           onChange={(e) =>
             handleCheckboxChange(eventInfo.event.id, e.target.checked)
           }
+          onClick={(e) => e.stopPropagation()}
           inputProps={{ "aria-label": "Checkbox for availability" }}
           color="primary"
         />
-        <span>{eventInfo.event.title}</span>
+        <span
+          onClick={() => handleShiftClick(eventInfo.event.id)}
+          className="cursor-pointer"
+        >
+          {eventInfo.event.title}
+        </span>
       </div>
     );
   };
@@ -192,6 +210,9 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
           dateClick={(info) => {
             handleDateClick(info.date);
           }}
+          eventClick={(info) => {
+            handleShiftClick(info.event.id);
+          }}
           eventContent={renderEventContent}
           height="auto"
           contentHeight="auto"
@@ -199,52 +220,72 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
         />
       </div>
 
-      {showModal && selectedDate && (
+      {showModal && (selectedDate || selectedShift) && (
         <div
-          className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50"
-          onClick={() => setShowModal(false)}
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 sm:p-0"
+          onClick={() => {
+            setShowModal(false);
+            setSelectedShift(null);
+            setSelectedDate(null);
+          }}
         >
           <div
-            className="bg-white rounded-lg p-4 w-full max-w-md md:max-w-lg lg:max-w-xl h-auto max-h-[80vh] overflow-y-auto"
+            className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden transform transition-all"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-xl font-bold mb-2">
-              Shifts for {format(selectedDate, "MMMM d, yyyy")}
-            </h2>
-            {selectedShifts.length > 0 ? (
-              selectedShifts.map((shift) => (
-                <div
-                  key={shift._id}
-                  className="mb-3 p-3 border rounded-lg shadow-sm"
-                >
-                  <h3 className="font-semibold text-md">{shift.title}</h3>
-                  <p className="text-sm">
-                    <strong>Time:</strong>{" "}
-                    {format(parseISO(shift.start), "p")} -{" "}
-                    {format(parseISO(shift.end), "p")}
-                  </p>
-                  <p className="text-sm">
-                    <strong>Accepted Workers:</strong>{" "}
-                    {shift.acceptedWorkers?.join(", ") || "None"}
-                  </p>
-                  <p className="text-sm">
-                    <strong>Potential Workers:</strong>{" "}
-                    {shift.potentialWorkers.join(", ") || "None"}
-                  </p>
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-white">
+                {selectedDate
+                  ? `Shifts for ${format(selectedDate, "MMMM d, yyyy")}`
+                  : selectedShift?.title}
+              </h2>
+              {selectedDate && (
+                <div className="text-white">
+                  {currentShiftIndex + 1} / {selectedShifts.length}
                 </div>
-              ))
-            ) : (
-              <p className="text-gray-500">No shifts for this day.</p>
-            )}
-            <button
-              className="mt-3 px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
-              onClick={() => setShowModal(false)}
-            >
-              Close
-            </button>
+              )}
+            </div>
+            <div className="p-6">
+              {selectedDate && selectedShifts.length > 0 && (
+                <div>
+                  <ShiftDetails shift={selectedShifts[currentShiftIndex]} />
+                  <div className="flex justify-between mt-4">
+                    <button
+                      onClick={() => setCurrentShiftIndex((prev) => (prev > 0 ? prev - 1 : selectedShifts.length - 1))}
+                      className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                    >
+                      ← Previous
+                    </button>
+                    <button
+                      onClick={() => setCurrentShiftIndex((prev) => (prev < selectedShifts.length - 1 ? prev + 1 : 0))}
+                      className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              )}
+              {selectedDate && selectedShifts.length === 0 && (
+                <p className="text-gray-500 italic">No shifts scheduled for this day.</p>
+              )}
+              {selectedShift && <ShiftDetails shift={selectedShift} />}
+            </div>
+            <div className="bg-gray-50 px-6 py-4 flex justify-end">
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setSelectedShift(null);
+                  setSelectedDate(null);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 ease-in-out"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
+
       <div className="flex justify-center">
         <Button
           onClick={submitAvailability}
@@ -253,6 +294,56 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
         >
           {isLoading ? <Skeleton width={100} /> : "Submit Availability"}
         </Button>
+      </div>
+    </div>
+  );
+}
+
+function ShiftDetails({ shift }: { shift: Shift }) {
+  return (
+    <div>
+      <h3 className="font-semibold text-lg text-gray-800 mb-2">{shift.title}</h3>
+      <p className="text-gray-700">
+        <span className="font-semibold">Date:</span>{" "}
+        {format(parseISO(shift.start), "MMMM d, yyyy")}
+      </p>
+      <p className="text-gray-700 mb-4">
+        <span className="font-semibold">Time:</span>{" "}
+        {format(parseISO(shift.start), "p")} - {format(parseISO(shift.end), "p")}
+      </p>
+      <div className="mb-4">
+        <h4 className="font-semibold text-md text-gray-800 mb-2">Accepted Workers</h4>
+        {shift.acceptedWorkers && shift.acceptedWorkers.length > 0 ? (
+          <ul className="space-y-1">
+            {shift.acceptedWorkers.map((worker, index) => (
+              <li key={index} className="flex items-center text-gray-700">
+                <svg className="h-4 w-4 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                {worker}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-gray-500 italic">No accepted workers yet.</p>
+        )}
+      </div>
+      <div>
+        <h4 className="font-semibold text-md text-gray-800 mb-2">Potential Workers</h4>
+        {shift.potentialWorkers.length > 0 ? (
+          <ul className="space-y-1">
+            {shift.potentialWorkers.map((worker, index) => (
+              <li key={index} className="flex items-center text-gray-700">
+                <svg className="h-4 w-4 text-yellow-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {worker}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-gray-500 italic">No potential workers at the moment.</p>
+        )}
       </div>
     </div>
   );
