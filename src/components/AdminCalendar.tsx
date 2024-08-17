@@ -9,7 +9,7 @@ import { parseISO, format } from "date-fns";
 import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import bootstrap5Plugin from "@fullcalendar/bootstrap5";
-import ReturnHomeButton from "./ReturnHomeButton";
+// import ReturnHomeButton from "./ReturnHomeButton";
 
 interface Shift {
   _id: string;
@@ -33,7 +33,7 @@ interface NewShift {
 
 export default function AdminCalendar() {
   const [shifts, setShifts] = useState<Shift[]>([]);
-  const [availabilities, setAvailabilities] = useState<Availability[]>([]);
+  // const [availabilities, setAvailabilities] = useState<Availability[]>([]);
   const [showAddShiftModal, setShowAddShiftModal] = useState(false);
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
@@ -47,7 +47,7 @@ export default function AdminCalendar() {
 
   useEffect(() => {
     fetchShifts();
-    fetchAvailabilities();
+    // fetchAvailabilities();
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -68,11 +68,11 @@ export default function AdminCalendar() {
     );
   };
 
-  const fetchAvailabilities = async () => {
-    const response = await fetch("/api/availabilities");
-    const data = await response.json();
-    setAvailabilities(data.availabilities);
-  };
+  // const fetchAvailabilities = async () => {
+  //   const response = await fetch("/api/availabilities");
+  //   const data = await response.json();
+  //   setAvailabilities(data.availabilities);
+  // };
 
   const handleDateSelect = (arg: { start: Date; end: Date }) => {
     const dates = [];
@@ -211,7 +211,7 @@ export default function AdminCalendar() {
 
       if (response.ok) {
         fetchShifts();
-        fetchAvailabilities();
+        // fetchAvailabilities();
       } else {
         console.error("Error accepting worker:", response.statusText);
       }

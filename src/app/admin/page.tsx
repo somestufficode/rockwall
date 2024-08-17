@@ -9,7 +9,7 @@ interface AdminCalendarProps {
   name: string;
 }
 
-export default function AdminPage({ name }: AdminCalendarProps) {
+export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showFinalizedCalendar, setShowFinalizedCalendar] = useState(false);
