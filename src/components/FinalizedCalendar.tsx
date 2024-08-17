@@ -76,6 +76,19 @@ export default function FinalizedCalendar({ name }: FinalizedCalendarProps) {
     }));
   };
 
+  const determineEventColor = (title: string) => {
+    if (title.includes("Open Wall")) {
+      return "bg-red-100 border-red-400 text-red-800";
+    } else if (title.includes("Class")) {
+      return "bg-green-100 border-green-400 text-green-800";
+    } else if (title.includes("Camp")) {
+      return "bg-blue-100 border-blue-400 text-blue-800";
+    } else {
+      return "bg-gray-100 border-gray-400 text-gray-800";
+    }
+  };
+
+  
   return (
     <div className="p-6 md:p-8 lg:p-10 bg-gray-50 min-h-screen">
       <div className="flex justify-between items-center mb-4">
@@ -110,16 +123,19 @@ export default function FinalizedCalendar({ name }: FinalizedCalendarProps) {
         eventContent={({ event }) => {
           if (event.extendedProps.isPlaceholder) {
             return (
-              <div className="p-2 bg-white rounded-lg ">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="p-1 bg-white rounded-lg">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
                 <div className="h-3 bg-gray-200 rounded w-1/2"></div>
               </div>
             );
           }
+        
+          const eventColorClasses = determineEventColor(event.title);
+        
           return (
-            <div className="p-2 bg-white rounded-lg shadow-md">
-              <p className="font-bold text-sm">{event.title}</p>
-              <p className="text-gray-600 text-sm mt-1">
+            <div className={`m-1 p-1 rounded-lg shadow-md ${eventColorClasses}`}>
+              <p className="font-bold text-sm whitespace-normal break-words">{event.title}</p>
+              <p className="text-gray-600 text-md mt-0.5 whitespace-normal break-words">
                 {event.extendedProps.acceptedWorkers?.join(", ") || "No workers"}
               </p>
             </div>

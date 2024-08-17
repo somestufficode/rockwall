@@ -9,38 +9,35 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-    await connectToDatabase();
-    
-    const shiftsData = await req.json();
-    console.log('Received shifts data:', shiftsData);
+  await connectToDatabase();
+  
+  const { shifts } = await req.json();
+  console.log('Received shifts data:', shifts);
 
-    if (!Array.isArray(shiftsData)) {
-        return NextResponse.json({ message: 'Invalid input: expected an array of shifts' }, { status: 400 });
-    }
+  if (!Array.isArray(shifts)) {
+      return NextResponse.json({ message: 'Invalid input: expected an array of shifts' }, { status: 400 });
+  }
 
-    try {
-        const createdShifts = await Promise.all(shiftsData.map(async (shiftData) => {
-            const { title, start, end, acceptedWorkers, potentialWorkers } = shiftData;
-            
-            return await ShiftModel.create({
-                title,
-                start,
-                end,
-                acceptedWorkers: acceptedWorkers || [],
-                potentialWorkers: potentialWorkers || []
-            });
-        }));
+  try {
+      const createdShifts = await Promise.all(shifts.map(async (shiftData) => {
+          const { title, start, end, acceptedWorkers, potentialWorkers } = shiftData;
+          
+          return await ShiftModel.create({
+              title,
+              start,
+              end,
+              acceptedWorkers: acceptedWorkers || [],
+              potentialWorkers: potentialWorkers || []
+          });
+      }));
 
-        return NextResponse.json({ message: 'Shifts created', shifts: createdShifts }, { status: 201 });
-    } catch (error) {
-        console.error('Error creating shifts:', error);
-        return NextResponse.json({ message: 'Error creating shifts'}, { status: 500 });
-    }
+      return NextResponse.json({ message: 'Shifts created', shifts: createdShifts }, { status: 201 });
+  } catch (error) {
+      console.error('Error creating shifts:', error);
+      return NextResponse.json({ message: 'Error creating shifts'}, { status: 500 });
+  }
 }
 
-// ... PUT handler remains the same
-
-// New route for handling availability submissions
 export async function PUT(req: NextRequest) {
   await connectToDatabase()
   const { name, shiftIds } = await req.json()

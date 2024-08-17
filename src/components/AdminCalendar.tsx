@@ -1,11 +1,11 @@
-"use client";
 import { useState, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
-import { EventSourceInput, EventChangeArg } from "@fullcalendar/core";
+import { EventSourceInput, EventChangeArg, EventContentArg } from "@fullcalendar/core";
+import { parseISO, format } from "date-fns";
 import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import bootstrap5Plugin from "@fullcalendar/bootstrap5";
@@ -29,35 +29,43 @@ interface NewShift {
   title: string;
   startTime: string;
   endTime: string;
-  acceptedWorkers: string[];
-  potentialWorkers: string[];
 }
 
 export default function AdminCalendar() {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [availabilities, setAvailabilities] = useState<Availability[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [modalContent, setModalContent] = useState<"options" | "add" | "shifts">("options");
+  const [showAddShiftModal, setShowAddShiftModal] = useState(false);
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [newShift, setNewShift] = useState<NewShift>({
     title: "",
     startTime: "",
     endTime: "",
-    acceptedWorkers: [],
-    potentialWorkers: [],
   });
   const [workersSelection, setWorkersSelection] = useState<string[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     fetchShifts();
     fetchAvailabilities();
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const handleResize = () => {
+    setIsMobile(window.innerWidth <= 768);
+  };
 
   const fetchShifts = async () => {
     const response = await fetch("/api/shifts");
     const data = await response.json();
-    setShifts(data.shifts);
+    setShifts(
+      data.shifts.map((shift: any) => ({
+        ...shift,
+        id: shift._id,
+      }))
+    );
   };
 
   const fetchAvailabilities = async () => {
@@ -74,15 +82,20 @@ export default function AdminCalendar() {
       currentDate.setDate(currentDate.getDate() + 1);
     }
     setSelectedDates(dates);
-    setModalContent("options");
-    setShowModal(true);
+    setShowAddShiftModal(true);
   };
 
   const handleShiftClick = (shift: Shift) => {
     setSelectedShift(shift);
     setWorkersSelection(shift.acceptedWorkers || []);
-    setModalContent("shifts");
-    setShowModal(true);
+  };
+
+  const handleWorkerToggle = (workerName: string) => {
+    setWorkersSelection((prev) =>
+      prev.includes(workerName)
+        ? prev.filter((name) => name !== workerName)
+        : [...prev, workerName]
+    );
   };
 
   const handleAcceptWorkers = async () => {
@@ -105,40 +118,33 @@ export default function AdminCalendar() {
               : shift
           )
         );
+        setSelectedShift(null);
       }
     } catch (error) {
       console.error("Error finalizing workers:", error);
     }
   };
 
-  const handleWorkerToggle = (workerName: string) => {
-    setWorkersSelection((prev) =>
-      prev.includes(workerName)
-        ? prev.filter((name) => name !== workerName)
-        : [...prev, workerName]
-    );
+  const handleShiftInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewShift({ ...newShift, [e.target.name]: e.target.value });
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewShift({
-      ...newShift,
-      [e.target.name]: e.target.value,
-    });
-  };
+  const handleAddShifts = async () => {
+    if (selectedDates.length === 0) return;
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const newShifts = selectedDates.map((date) => {
+    const shiftsToAdd = selectedDates.map((date) => {
       const start = new Date(date);
       start.setHours(
         parseInt(newShift.startTime.split(":")[0]),
         parseInt(newShift.startTime.split(":")[1])
       );
+
       const end = new Date(date);
       end.setHours(
         parseInt(newShift.endTime.split(":")[0]),
         parseInt(newShift.endTime.split(":")[1])
       );
+
       return {
         title: newShift.title,
         start: start.toISOString(),
@@ -148,35 +154,24 @@ export default function AdminCalendar() {
       };
     });
 
-    const response = await fetch("/api/shifts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newShifts),
-    });
-
-    if (response.ok) {
-      fetchShifts();
-      setShowModal(false);
-      setNewShift({
-        title: "",
-        startTime: "",
-        endTime: "",
-        acceptedWorkers: [],
-        potentialWorkers: [],
+    try {
+      const response = await fetch("/api/shifts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shifts: shiftsToAdd }),
       });
-      setSelectedDates([]);
-    }
-  };
 
-  const handleAcceptWorker = async (shiftId: string, workerName: string) => {
-    const response = await fetch(`/api/shifts/${shiftId}/accept`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ workerName }),
-    });
-    if (response.ok) {
-      fetchShifts();
-      fetchAvailabilities();
+      if (response.ok) {
+        fetchShifts();
+        setShowAddShiftModal(false);
+        setNewShift({ title: "", startTime: "", endTime: "" });
+        setSelectedDates([]);
+      } else {
+        const errorData = await response.json();
+        console.error("Error adding shifts:", errorData.message);
+      }
+    } catch (error) {
+      console.error("Error adding shifts:", error);
     }
   };
 
@@ -206,13 +201,60 @@ export default function AdminCalendar() {
     }
   };
 
+  const handleAcceptWorker = async (shiftId: string, workerName: string) => {
+    try {
+      const response = await fetch(`/api/shifts/${shiftId}/accept`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workerName }),
+      });
+
+      if (response.ok) {
+        fetchShifts();
+        fetchAvailabilities();
+      } else {
+        console.error("Error accepting worker:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error accepting worker:", error);
+    }
+  };
+
+  const handleDeleteShift = async () => {
+    if (!selectedShift) return;
+
+    try {
+      const response = await fetch(`/api/shifts/${selectedShift._id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setShifts((prevShifts) =>
+          prevShifts.filter((shift) => shift._id !== selectedShift._id)
+        );
+        setSelectedShift(null);
+      } else {
+        console.error("Error deleting shift:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error deleting shift:", error);
+    }
+  };
+
+  const determineEventColor = (title: string) => {
+    if (title.includes("Open Wall")) {
+      return "bg-red-100 border-red-400 text-red-800";
+    } else if (title.includes("Class")) {
+      return "bg-green-100 border-green-400 text-green-800";
+    } else if (title.includes("Camp")) {
+      return "bg-blue-100 border-blue-400 text-blue-800";
+    } else {
+      return "bg-gray-100 border-gray-400 text-gray-800";
+    }
+  };
+
   return (
     <div>
-{/*       
-      <div className="flex justify-between items-center mb-4">
-        <ReturnHomeButton />
-      </div> */}
-
       <FullCalendar
         plugins={[
           dayGridPlugin,
@@ -222,219 +264,221 @@ export default function AdminCalendar() {
           bootstrap5Plugin,
         ]}
         themeSystem="bootstrap5"
-        initialView="dayGridMonth"
+        initialView="listWeek"
         headerToolbar={{
-          left: "prev,next today",
-          right: "title",
+          left: isMobile ? "prev,next" : "prev,next today",
+          center: "title",
+          right: "listWeek,dayGridMonth",
         }}
         events={shifts.map((shift) => ({
           ...shift,
+          id: shift._id,
           title: shift.title,
         })) as EventSourceInput}
         editable={true}
         selectable={true}
         select={handleDateSelect}
         eventClick={(info) => {
-          const shift = shifts.find((s) => s._id === info.event.id);
+          const shiftId = info.event.id;
+          const shift = shifts.find((s) => s._id === shiftId);
           if (shift) {
             handleShiftClick(shift);
           }
         }}
         eventChange={handleEventChange}
+        height="auto"
+        contentHeight="auto"
+        eventContent={({ event }: EventContentArg) => {
+          if (event.extendedProps.isPlaceholder) {
+            return (
+              <div className="p-1 bg-white rounded-lg">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            );
+          }
+
+          const eventColorClasses = determineEventColor(event.title);
+          const startTime = event.start ? format(event.start, "p") : "N/A";
+          const endTime = event.end ? format(event.end, "p") : "N/A";
+
+          return (
+            <div className={`p-1 rounded-lg shadow-md ${eventColorClasses} m-1`}>
+              <p className="font-bold text-md whitespace-normal break-words">{event.title}</p>
+              <p className="text-gray-600 text-sm mt-0.5 whitespace-normal break-words">
+                {startTime} - {endTime}
+              </p>
+              <p className="text-gray-600 text-sm mt-1 font-bold whitespace-normal break-words">
+                {event.extendedProps.acceptedWorkers?.join(", ") || "No workers"}
+              </p>
+            </div>
+          );
+        }}
       />
 
-      {showModal && (
+      {showAddShiftModal && (
         <div
-          className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowModal(false);
-          }}
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 sm:p-0"
+          onClick={() => setShowAddShiftModal(false)}
         >
           <div
-            className="bg-white rounded-lg shadow-lg w-full max-w-md mx-auto p-6"
+            className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden transform transition-all"
             onClick={(e) => e.stopPropagation()}
           >
-            {modalContent === "options" && (
-              <div>
-                <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
-                  Selected Dates: {selectedDates.map(date => date.toDateString()).join(', ')}
-                </h3>
-                <div className="flex justify-between">
-                  <button
-                    onClick={() => setModalContent("add")}
-                    className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                  >
-                    Add Shift
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedShift(null);
-                      setModalContent("shifts");
-                    }}
-                    className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                  >
-                    View Shifts
-                  </button>
-                </div>
-                <div className="flex justify-end mt-4">
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition duration-200"
-                  >
-                    Cancel
-                  </button>
-                </div>
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+              <h2 className="text-2xl font-bold text-white">Add New Shifts</h2>
+            </div>
+            <div className="p-6">
+              <div className="mb-4">
+                <p className="text-gray-700">
+                  <span className="font-semibold">Selected Dates:</span>{" "}
+                  {selectedDates.map((date) => format(date, "MMMM d, yyyy")).join(", ")}
+                </p>
               </div>
-            )}
-
-            {modalContent === "add" && (
-              <div>
-                <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
-                  Add Shifts for: {selectedDates.map(date => date.toDateString()).join(', ')}
-                </h3>
-                <form onSubmit={handleSubmit}>
-                  <input
-                    type="text"
-                    name="title"
-                    value={newShift.title}
-                    onChange={handleChange}
-                    placeholder="Shift Title"
-                    className="mt-2 p-2 w-full border rounded"
-                  />
-                  <input
-                    type="time"
-                    name="startTime"
-                    value={newShift.startTime}
-                    onChange={handleChange}
-                    className="mt-2 p-2 w-full border rounded"
-                  />
-                  <input
-                    type="time"
-                    name="endTime"
-                    value={newShift.endTime}
-                    onChange={handleChange}
-                    className="mt-2 p-2 w-full border rounded"
-                  />
-                  <div className="mt-4">
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                    >
-                      Add Shifts
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setModalContent("options")}
-                      className="ml-2 px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                    >
-                      Back
-                    </button>
-                  </div>
-                </form>
+              <div className="mb-4">
+                <input
+                  type="text"
+                  name="title"
+                  value={newShift.title}
+                  onChange={handleShiftInputChange}
+                  placeholder="Shift Title"
+                  className="w-full p-2 border rounded"
+                />
               </div>
-            )}
-
-            {modalContent === "shifts" && (
-              <div>
-                <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
-                  Shifts on: {selectedDates.length > 0 ? selectedDates[0].toDateString() : ""}
-                </h3>
-                <ul className="mb-4">
-                  {shifts
-                    .filter(
-                      (shift) =>
-                        selectedDates.some(date => 
-                          new Date(shift.start).toDateString() === date.toDateString()
-                        )
-                    )
-                    .map((shift) => (
-                      <li
-                        key={shift._id}
-                        className={`p-2 rounded mb-2 cursor-pointer ${
-                          selectedShift?._id === shift._id
-                            ? "bg-blue-200"
-                            : "bg-gray-100 hover:bg-gray-200"
-                        }`}
-                        onClick={() => handleShiftClick(shift)}
-                      >
-                        <strong>{shift.title}</strong> (
-                        {new Date(shift.start).toLocaleTimeString()} -{" "}
-                        {new Date(shift.end).toLocaleTimeString()})
-                      </li>
-                    ))}
-                </ul>
-                {selectedShift && (
-                  <div>
-                    <h4 className="font-medium mb-2">Potential Workers:</h4>
-                    <div className="flex flex-wrap mb-2">
-                      {selectedShift.potentialWorkers.map((worker) => (
-                        <button
-                          key={worker}
-                          onClick={() => handleWorkerToggle(worker)}
-                          className={`m-1 px-3 py-1 rounded ${
-                            workersSelection.includes(worker)
-                              ? "bg-blue-500 text-white"
-                              : "bg-gray-300 text-gray-800"
-                          }`}
-                        >
-                          {worker}
-                        </button>
-                      ))}
-                    </div>
-                    <h4 className="font-medium mb-2">Accepted Workers:</h4>
-                    <div className="flex flex-wrap mb-4">
-                      {selectedShift.acceptedWorkers?.map((worker) => (
-                        <span
-                          key={worker}
-                          className="m-1 px-3 py-1 rounded bg-green-500 text-white"
-                        >
-                          {worker}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="flex justify-end">
-                      <button
-                        onClick={handleAcceptWorkers}
-                        className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-700 transition duration-200"
-                      >
-                        Accept Workers
-                      </button>
-                    </div>
-                  </div>
-                )}
-                <div className="flex justify-end mt-4">
-                  <button
-                    onClick={() => setModalContent("options")}
-                    className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition duration-200"
-                  >
-                    Back
-                  </button>
-                </div>
+              <div className="mb-4">
+                <input
+                  type="time"
+                  name="startTime"
+                  value={newShift.startTime}
+                  onChange={handleShiftInputChange}
+                  className="w-full p-2 border rounded"
+                />
               </div>
-            )}
+              <div className="mb-4">
+                <input
+                  type="time"
+                  name="endTime"
+                  value={newShift.endTime}
+                  onChange={handleShiftInputChange}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+            </div>
+            <div className="bg-gray-50 px-6 py-4 flex justify-between">
+              <button
+                onClick={handleAddShifts}
+                className="px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-150 ease-in-out"
+              >
+                <i className="bi bi-plus-circle mr-2"></i>
+                Add Shifts
+              </button>
+              <button
+                onClick={() => setShowAddShiftModal(false)}
+                className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 ease-in-out"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      <div className="mt-8">
-        <h2 className="text-xl font-bold mb-4">Worker Availabilities</h2>
-        {availabilities.map((availability, index) => (
-          <div key={index} className="mb-2">
-            <span>
-              {availability.workerName} is available for shift{" "}
-              {availability.shiftId}
-            </span>
+      {selectedShift && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 sm:p-0"
+          onClick={() => setSelectedShift(null)}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden transform transition-all"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+              <h2 className="text-2xl font-bold text-white">{selectedShift.title}</h2>
+            </div>
+            <div className="p-6">
+              <div className="mb-4">
+                <p className="text-gray-700">
+                  <span className="font-semibold">Date:</span>{" "}
+                  {format(parseISO(selectedShift.start), "MMMM d, yyyy")}
+                </p>
+                <p className="text-gray-700">
+                  <span className="font-semibold">Time:</span>{" "}
+                  {format(parseISO(selectedShift.start), "p")}
+                </p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-gray-800 mb-2">Accepted Workers</h3>
+                {selectedShift.acceptedWorkers && selectedShift.acceptedWorkers.length > 0 ? (
+                  <ul className="space-y-1">
+                    {selectedShift.acceptedWorkers.map((worker, index) => (
+                      <li key={index} className="flex items-center text-gray-700">
+                        <input
+                          type="checkbox"
+                          checked={workersSelection.includes(worker)}
+                          onChange={() => handleWorkerToggle(worker)}
+                          className="mr-2"
+                        />
+                        <svg className="h-4 w-4 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        {worker}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-500 italic">No accepted workers yet.</p>
+                )}
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-gray-800 mb-2">Potential Workers</h3>
+                {selectedShift.potentialWorkers.length > 0 ? (
+                  <ul className="space-y-1">
+                    {selectedShift.potentialWorkers.map((worker, index) => (
+                      <li key={index} className="flex items-center text-gray-700">
+                        <input
+                          type="checkbox"
+                          checked={workersSelection.includes(worker)}
+                          onChange={() => handleWorkerToggle(worker)}
+                          className="mr-2"
+                        />
+                        <svg className="h-4 w-4 text-yellow-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {worker}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-500 italic">No potential workers at the moment.</p>
+                )}
+              </div>
+            </div>
+              <div className="bg-gray-50 px-6 py-4 flex justify-between space-x-4">
             <button
-              onClick={() =>
-                handleAcceptWorker(availability.shiftId, availability.workerName)
-              }
-              className="ml-2 px-2 py-1 bg-blue-500 text-white rounded"
+              onClick={handleAcceptWorkers}
+              className="px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-150 ease-in-out"
             >
-              Accept
+              <i className="bi bi-check-circle mr-2"></i>
+              Confirm Workers
+            </button>
+            <button
+              onClick={handleDeleteShift}
+              className="px-4 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition duration-150 ease-in-out"
+            >
+              <i className="bi bi-trash mr-2"></i>
+              Delete Shift
+            </button>
+            <button
+              onClick={() => setSelectedShift(null)}
+              className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 ease-in-out"
+            >
+              Close
             </button>
           </div>
-        ))}
-      </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }

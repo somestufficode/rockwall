@@ -63,3 +63,22 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ message: 'Error updating shift', error }, { status: 500 });
     }
   }
+
+  export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+    await connectToDatabase(); 
+  
+    const { id } = params; 
+  
+    try {
+      const shift = await ShiftModel.findByIdAndDelete(id);
+  
+      if (!shift) {
+        return NextResponse.json({ message: 'Shift not found' }, { status: 404 });
+      }
+  
+      return NextResponse.json({ message: 'Shift deleted successfully' }, { status: 200 });
+    } catch (error) {
+      console.error('Error deleting shift:', error);
+      return NextResponse.json({ message: 'Error deleting shift', error }, { status: 500 });
+    }
+  }
