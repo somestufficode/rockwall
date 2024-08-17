@@ -2,17 +2,17 @@
 
 import { useState } from 'react';
 import AdminCalendar from '@/components/AdminCalendar';
-import FinalizedCalendar from '@/components/FinalizedCalendar';
+// import FinalizedCalendar from '@/components/FinalizedCalendar';
 import ReturnHomeButton from '@/components/ReturnHomeButton';
 
-interface AdminCalendarProps {
-  name: string;
-}
+// interface AdminCalendarProps {
+//   name: string;
+// }
 
 export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showFinalizedCalendar, setShowFinalizedCalendar] = useState(false);
+  // const [showFinalizedCalendar, setShowFinalizedCalendar] = useState(false);
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value);
@@ -26,9 +26,9 @@ export default function AdminPage() {
     }
   };
 
-  const toggleCalendarView = () => {
-    setShowFinalizedCalendar((prev) => !prev);
-  };
+  // const toggleCalendarView = () => {
+  //   setShowFinalizedCalendar((prev) => !prev);
+  // };
 
   if (!isAuthenticated) {
     return (
