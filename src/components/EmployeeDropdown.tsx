@@ -13,14 +13,14 @@ export default function EmployeeDropdown() {
   const [loading, setLoading] = React.useState(false);
   const router = useRouter();
 
-  const employees = ['Vincent', 'Derek', 'Don', 'Joe', 'Greg', 'Matt', 'Brendan', 'Andrianna', 'Eleni', 'Randy'];
+  const employees = ['Vincent', 'Brandon', 'Derek', 'Don', 'Joe', 'Matt', 'Brendan', 'Andrianna', 'Eleni', 'Randy', 'Greg'];
 
   const handleChange = (event: SelectChangeEvent) => {
     const employeeName = event.target.value;
     setSelectedEmployee(employeeName);
 
     if (employeeName) {
-      setLoading(true); // Show loading icon
+      setLoading(true); 
       setTimeout(() => {
         router.push(`/employees/${employeeName}`);
       }, 1500);
@@ -37,7 +37,7 @@ export default function EmployeeDropdown() {
           value={selectedEmployee}
           label="Select Employee"
           onChange={handleChange}
-          disabled={loading} // Disable selection while loading
+          disabled={loading} 
         >
           {employees.map((employee) => (
             <MenuItem key={employee} value={employee}>

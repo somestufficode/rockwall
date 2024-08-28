@@ -20,10 +20,10 @@ interface Shift {
   potentialWorkers: string[];
 }
 
-interface Availability {
-  shiftId: string;
-  workerName: string;
-}
+// interface Availability {
+//   shiftId: string;
+//   workerName: string;
+// }
 
 interface NewShift {
   title: string;
@@ -201,24 +201,24 @@ export default function AdminCalendar() {
     }
   };
 
-  const handleAcceptWorker = async (shiftId: string, workerName: string) => {
-    try {
-      const response = await fetch(`/api/shifts/${shiftId}/accept`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workerName }),
-      });
+  // const handleAcceptWorker = async (shiftId: string, workerName: string) => {
+  //   try {
+  //     const response = await fetch(`/api/shifts/${shiftId}/accept`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ workerName }),
+  //     });
 
-      if (response.ok) {
-        fetchShifts();
-        // fetchAvailabilities();
-      } else {
-        console.error("Error accepting worker:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error accepting worker:", error);
-    }
-  };
+  //     if (response.ok) {
+  //       fetchShifts();
+  //       // fetchAvailabilities();
+  //     } else {
+  //       console.error("Error accepting worker:", response.statusText);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error accepting worker:", error);
+  //   }
+  // };
 
   const handleDeleteShift = async () => {
     if (!selectedShift) return;

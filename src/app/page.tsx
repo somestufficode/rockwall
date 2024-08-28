@@ -11,7 +11,7 @@ export default function Home() {
       <EmployeeDropdown />
       <Button>
           <Link href="/admin" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded no-underline">
-              Admin
+              Admin Access
           </Link>
       </Button>
       {/* <div className="flex space-x-4">
