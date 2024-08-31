@@ -11,7 +11,7 @@ import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import bootstrap5Plugin from "@fullcalendar/bootstrap5";
 import ReturnHomeButton from "./ReturnHomeButton";
-import { Box, Button, Skeleton } from "@mui/material";
+import { Box, Button, Skeleton, Snackbar, Alert } from "@mui/material";
 
 interface Shift {
   _id: string;
@@ -38,7 +38,7 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
   const [currentShiftIndex, setCurrentShiftIndex] = useState(0);
-
+  const [submissionStatus, setSubmissionStatus] = useState<"success" | "error" | null>(null);
 
   useEffect(() => {
     fetchShifts();
@@ -111,7 +111,7 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
       });
 
       if (!response.ok) throw new Error("Failed to save availability");
-      alert("Availability submitted successfully!");
+      setSubmissionStatus("success");
 
       setShifts((prevShifts) =>
         prevShifts.map((shift) => {
@@ -134,7 +134,7 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
       );
     } catch (error) {
       console.error("Error saving availability:", error);
-      alert("Failed to submit availability. Please try again.");
+      setSubmissionStatus("error");
     }
   };
 
@@ -295,6 +295,23 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
           {isLoading ? <Skeleton width={100} /> : "Submit Availability"}
         </Button>
       </div>
+
+      <Snackbar
+        open={submissionStatus !== null}
+        autoHideDuration={6000}
+        onClose={() => setSubmissionStatus(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSubmissionStatus(null)}
+          severity={submissionStatus === "success" ? "success" : "error"}
+          sx={{ width: '100%' }}
+        >
+          {submissionStatus === "success"
+            ? "Availability submitted successfully!"
+            : "Failed to submit availability. Please try again."}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }
