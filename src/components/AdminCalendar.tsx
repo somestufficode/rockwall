@@ -268,7 +268,7 @@ export default function AdminCalendar() {
         headerToolbar={{
           left: isMobile ? "prev,next" : "prev,next today",
           center: "title",
-          right: isMobile ? "" : "listWeek, dayGridMonth",
+          right: isMobile ? "" : "listWeek,dayGridMonth",
         }}
         events={shifts.map((shift) => ({
           ...shift,
