@@ -5,7 +5,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
-import { parseISO, format } from "date-fns";
+import { parseISO, format, addDays, startOfMonth } from "date-fns";
 import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import bootstrap5Plugin from "@fullcalendar/bootstrap5";
@@ -66,6 +66,18 @@ export default function EmployeeCalendar({ name }: EmployeeCalendarProps) {
     shift.acceptedWorkers.includes(name)
   );
 
+  const generatePlaceholderEvents = (daysInMonth: number) => {
+    const start = startOfMonth(new Date());
+    return Array.from({ length: daysInMonth }, (_, index) => ({
+      id: `placeholder-${index}`,
+      title: 'Loading...',
+      start: addDays(start, index),
+      end: addDays(start, index),
+      allDay: true,
+      extendedProps: { isPlaceholder: true },
+    }));
+  };
+
   const determineEventColor = (title: string) => {
     if (title.includes("Open Wall")) {
       return "bg-red-100 border-red-400 text-red-800";
@@ -87,15 +99,15 @@ export default function EmployeeCalendar({ name }: EmployeeCalendarProps) {
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin, listPlugin, bootstrap5Plugin]}
         themeSystem="bootstrap5"
-        initialView={isMobile ? "listWeek" : "dayGridMonth"}
+        initialView="listWeek"
         headerToolbar={{
           left: isMobile ? "prev,next" : "prev,next today",
           center: "title",
           right: isMobile ? "" : "dayGridMonth,listWeek",
         }}
         titleFormat={isMobile ? { month: 'short', day: 'numeric' } : { month: 'long', day: 'numeric' }}
-        events={isLoading ? [] : filteredShifts.map((shift) => ({
-          id: shift._id,
+        events={isLoading ? generatePlaceholderEvents(31) : filteredShifts.map((shift) => ({
+            id: shift._id,
           title: `${shift.title} ${format(parseISO(shift.start), "p")}`,
           start: shift.start,
           end: shift.end,
@@ -110,6 +122,15 @@ export default function EmployeeCalendar({ name }: EmployeeCalendarProps) {
         contentHeight="auto"
         aspectRatio={1.35}
         eventContent={({ event }) => {
+            if (event.extendedProps.isPlaceholder) {
+                return (
+                  <div className="p-1 bg-white rounded-lg">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                );
+              }
+              
           const eventColorClasses = determineEventColor(event.title);
         
           return (

@@ -10,7 +10,7 @@ interface ViewSwitcherProps {
 
 export default function ViewSwitcher({ selectedView, setSelectedView }: ViewSwitcherProps) {
   return (
-    <Stack direction="row" spacing={2} className="mb-4">
+    <Stack direction="row" spacing={1} className="mb-4">
       <Button
         variant="text"
         onClick={() => setSelectedView('availability')}

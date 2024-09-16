@@ -5,7 +5,7 @@ import admin from '../../public/admin.png'
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
+    <main className="flex min-h-screen flex-col items-center justify-center">
       <div className='mb-8' >
         <Link 
           href="/admin" 
@@ -20,7 +20,7 @@ export default function Home() {
           />
         </Link>
       </div>
-      <h1 className="text-4xl font-bold mb-10">Rockwall Scheduler</h1>
+      <h1 className="text-3xl font-bold mb-10">Rockwall Scheduler</h1>
       <EmployeeDropdown />
     </main>
   )
