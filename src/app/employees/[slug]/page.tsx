@@ -5,9 +5,10 @@ import UserAvailability from '@/components/UserAvailability';
 import FinalizedCalendar from '@/components/FinalizedCalendar';
 import ViewSwitcher from '@/components/ViewSwitcher';
 import ReturnHomeButton from '@/components/ReturnHomeButton';
+import EmployeeCalendar from '@/components/EmployeeCalendar';
 
 export default function Page({ params }: { params: { slug: string } }) {
-  const [selectedView, setSelectedView] = useState<'availability' | 'calendar'>('calendar');
+  const [selectedView, setSelectedView] = useState<'availability' | 'calendar' | 'employee'>('calendar');
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -17,6 +18,7 @@ export default function Page({ params }: { params: { slug: string } }) {
         </div>
         {selectedView === 'availability' && <UserAvailability name={params.slug} />}
         {selectedView === 'calendar' && <FinalizedCalendar name={params.slug} />}
+        {selectedView === 'employee' && <EmployeeCalendar name={params.slug} />}
       </div>
     </div>
   );

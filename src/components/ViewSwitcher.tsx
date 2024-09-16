@@ -4,8 +4,8 @@ import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 
 interface ViewSwitcherProps {
-  selectedView: 'availability' | 'calendar';
-  setSelectedView: (view: 'availability' | 'calendar') => void;
+  selectedView: 'availability' | 'calendar' | 'employee';
+  setSelectedView: (view: 'availability' | 'calendar' | 'employee') => void;
 }
 
 export default function ViewSwitcher({ selectedView, setSelectedView }: ViewSwitcherProps) {
@@ -30,6 +30,16 @@ export default function ViewSwitcher({ selectedView, setSelectedView }: ViewSwit
         }}
       >
         Calendar
+      </Button>
+      <Button
+        variant="text"
+        onClick={() => setSelectedView('employee')}
+        style={{
+          color: selectedView === 'employee' ? '#fff' : '#000',
+          backgroundColor: selectedView === 'employee' ? '#4a5568' : 'transparent',
+        }}
+      >
+        Employee
       </Button>
     </Stack>
   );
