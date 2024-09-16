@@ -79,6 +79,8 @@ export default function FinalizedCalendar({ name }: FinalizedCalendarProps) {
   const determineEventColor = (title: string) => {
     if (title.includes("Open Wall")) {
       return "bg-red-100 border-red-400 text-red-800";
+    } else if (title.includes("Holiday Class")) {
+      return "bg-blue-100 border-blue-400 text-blue-800";
     } else if (title.includes("Class")) {
       return "bg-green-100 border-green-400 text-green-800";
     } else if (title.includes("Camp")) {
