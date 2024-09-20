@@ -13,7 +13,7 @@ export default function EmployeeDropdown() {
   const [loading, setLoading] = React.useState(false);
   const router = useRouter();
 
-  const employees = ['Vincent', 'Brandon', 'Derek', 'Don', 'Joe', 'Matt', 'Brendan', 'Andrianna', 'Eleni', 'Randy', 'Greg'];
+  const employees = ['Vincent', 'Brandon', 'Derek', 'Don', 'Mark', 'Joe', 'Matt', 'Brendan', 'Andrianna', 'Eleni', 'Randy', 'Greg'];
 
   const handleChange = (event: SelectChangeEvent) => {
     const employeeName = event.target.value;
