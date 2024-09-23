@@ -32,6 +32,8 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [selectedShifts, setSelectedShifts] = useState<Shift[]>([]);
   const [availableShifts, setAvailableShifts] = useState<string[]>([]);
+  const [addedShifts, setAddedShifts] = useState<string[]>([]);
+  const [removedShifts, setRemovedShifts] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -88,9 +90,21 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
   };
 
   const handleCheckboxChange = (shiftId: string, isChecked: boolean) => {
-    setAvailableShifts((prev) =>
-      isChecked ? [...prev, shiftId] : prev.filter((id) => id !== shiftId)
-    );
+    setAvailableShifts((prev) => {
+      if (isChecked) {
+        // Remove from removedShifts if present
+        setRemovedShifts((prevRemoved) => prevRemoved.filter(id => id !== shiftId));
+        // Add to addedShifts if not already present
+        setAddedShifts((prevAdded) => prevAdded.includes(shiftId) ? prevAdded : [...prevAdded, shiftId]);
+        return [...prev, shiftId];
+      } else {
+        // Remove from addedShifts if present
+        setAddedShifts((prevAdded) => prevAdded.filter(id => id !== shiftId));
+        // Add to removedShifts if not already present
+        setRemovedShifts((prevRemoved) => prevRemoved.includes(shiftId) ? prevRemoved : [...prevRemoved, shiftId]);
+        return prev.filter((id) => id !== shiftId);
+      }
+    });
   };
 
   const submitAvailability = async () => {
@@ -98,40 +112,32 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
       alert("Name is missing.");
       return;
     }
+
+    if (addedShifts.length === 0 && removedShifts.length === 0) {
+      alert("No changes to submit.");
+      return;
+    }
+
     try {
-      const response = await fetch("/api/shifts", {
-        method: "PUT",
+      const response = await fetch("/api/shifts/", { 
+        method: "PATCH", 
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name,
-          shiftIds: availableShifts,
+          addShiftIds: addedShifts,
+          removeShiftIds: removedShifts,
         }),
       });
 
       if (!response.ok) throw new Error("Failed to save availability");
       setSubmissionStatus("success");
 
-      setShifts((prevShifts) =>
-        prevShifts.map((shift) => {
-          if (availableShifts.includes(shift._id)) {
-            return {
-              ...shift,
-              potentialWorkers: [...shift.potentialWorkers, name].filter(
-                (value, index, self) => self.indexOf(value) === index
-              ),
-            };
-          } else {
-            return {
-              ...shift,
-              potentialWorkers: shift.potentialWorkers.filter(
-                (worker) => worker !== name
-              ),
-            };
-          }
-        })
-      );
+      await fetchShifts();
+
+      setAddedShifts([]);
+      setRemovedShifts([]);
     } catch (error) {
       console.error("Error saving availability:", error);
       setSubmissionStatus("error");
@@ -290,7 +296,7 @@ export default function UserAvailability({ name }: UserAvailabilityProps) {
         <Button
           onClick={submitAvailability}
           className="mt-4 px-4 py-2 items-center bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
-          disabled={isLoading}
+          disabled={isLoading || (addedShifts.length === 0 && removedShifts.length === 0)}
         >
           {isLoading ? <Skeleton width={100} /> : "Submit Availability"}
         </Button>
