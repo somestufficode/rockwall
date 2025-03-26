@@ -4,6 +4,7 @@ import { useState } from 'react';
 import AdminCalendar from '@/components/AdminCalendar';
 // import FinalizedCalendar from '@/components/FinalizedCalendar';
 import ReturnHomeButton from '@/components/ReturnHomeButton';
+import { Button } from '@mui/material';
 
 // interface AdminCalendarProps {
 //   name: string;
@@ -13,6 +14,8 @@ export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   // const [showFinalizedCalendar, setShowFinalizedCalendar] = useState(false);
+  const [workerViewMode, setWorkerViewMode] = useState<'accepted' | 'potential'>('accepted');
+
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value);
@@ -29,6 +32,10 @@ export default function AdminPage() {
   // const toggleCalendarView = () => {
   //   setShowFinalizedCalendar((prev) => !prev);
   // };
+
+  const toggleWorkerView = () => {
+    setWorkerViewMode(prev => prev === 'accepted' ? 'potential' : 'accepted');
+  };
 
   if (!isAuthenticated) {
     return (
@@ -67,7 +74,27 @@ export default function AdminPage() {
       {showFinalizedCalendar ? (
         <FinalizedCalendar name="Admin" />
       ) : ( */}
-        <AdminCalendar />
-    </div>
+      <button
+          onClick={toggleWorkerView}
+          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-4 rounded flex mb-3 items-center"
+        >
+          {workerViewMode === 'accepted' ? (
+            <>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              View Potential Workers
+            </>
+          ) : (
+            <>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              View Accepted Workers
+            </>
+          )}
+        </button>
+        <AdminCalendar workerViewMode={workerViewMode} />
+        </div>
   );
 }

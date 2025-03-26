@@ -31,7 +31,11 @@ interface NewShift {
   endTime: string;
 }
 
-export default function AdminCalendar() {
+interface AdminCalendarProps {
+  workerViewMode: 'accepted' | 'potential';
+}
+
+export default function AdminCalendar({ workerViewMode }: AdminCalendarProps) {
   const [shifts, setShifts] = useState<Shift[]>([]);
   // const [availabilities, setAvailabilities] = useState<Availability[]>([]);
   const [showAddShiftModal, setShowAddShiftModal] = useState(false);
@@ -290,6 +294,7 @@ export default function AdminCalendar() {
           }
         }}
         eventChange={handleEventChange}
+        eventClassNames="fc-event-dot-hidden"
         height="auto"
         contentHeight="auto"
         eventContent={({ event }: EventContentArg) => {
@@ -306,14 +311,22 @@ export default function AdminCalendar() {
           const startTime = event.start ? format(event.start, "p") : "N/A";
           const endTime = event.end ? format(event.end, "p") : "N/A";
 
+          const acceptedWorkers = event.extendedProps.acceptedWorkers || [];
+          const potentialWorkers = event.extendedProps.potentialWorkers || [];
+          const displayWorkers = workerViewMode === 'accepted' 
+            ? acceptedWorkers 
+            : potentialWorkers;
+
           return (
-            <div className={`p-1 rounded-lg shadow-md ${eventColorClasses} m-1`}>
+            <div className={`w-full p-1 rounded-lg shadow-md ${eventColorClasses} m-1`}>
               <p className="font-bold text-md whitespace-normal break-words">{event.title}</p>
               <p className="text-gray-600 text-sm mt-0.5 whitespace-normal break-words">
                 {startTime} - {endTime}
               </p>
-              <p className="text-gray-600 text-sm mt-1 font-bold whitespace-normal break-words">
-                {event.extendedProps.acceptedWorkers?.join(", ") || "No workers"}
+           <p className="text-gray-600 text-sm mt-1 font-bold whitespace-normal break-words">
+                {displayWorkers.length > 0 
+                  ? displayWorkers.join(", ") 
+                  : (workerViewMode === 'accepted' ? "No accepted workers" : "No potential workers")}
               </p>
             </div>
           );
